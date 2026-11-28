@@ -323,6 +323,9 @@ class ViewerApp
         $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
         if( !in_array( 'reason', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE jobs ADD COLUMN reason TEXT' );
+        // the image a run asked for by name (a run type of a plug-in with a field of kind "image"); NULL: the image of the viewer
+        if( !in_array( 'image', array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' ), TRUE ) )
+            $this->db->exec( 'ALTER TABLE jobs ADD COLUMN image TEXT' );
         // command line use an administrator has seen (shown once after the login: cliNotices)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(users)' )->fetchAll(), 'name' );
         if( !in_array( 'cli_seen', $cols, TRUE ) )
@@ -1323,6 +1326,26 @@ class ViewerApp
         return $this->plugins->runs();
     }
 
+    /**
+     * the names of the further images a run may use (PANOSPHP_VIEWER_CONTAINER_IMAGES - the same setting for web part
+     * and job runner). The web part knows only the names; a setting that is not valid offers none (the job runner
+     * does not start with it and says why).
+     * @return string[]
+     */
+    public function runImages(): array
+    {
+        if( !class_exists( 'ViewerContainer' ) )
+            require_once dirname( __FILE__ ) . '/ViewerContainer.php';
+        try
+        {
+            return array_keys( ViewerContainer::imagesFromEnv() );
+        }
+        catch( Exception $e )
+        {
+            return array();
+        }
+    }
+
     private function pluginKinds(): array
     {
         return $this->plugins->kinds();
@@ -1337,7 +1360,9 @@ class ViewerApp
     /** for the browser page / scripts: plug-ins with their run types, fields and file kinds (admins: also the refused ones) */
     public function pluginMeta( bool $admin ): array
     {
-        $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array(), 'pages' => array(), 'projectTypes' => array() );
+        $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array(), 'pages' => array(), 'projectTypes' => array(),
+            // what a field of kind "image" offers: the names of the further images of this installation
+            'images' => $this->runImages() );
         foreach( $this->plugins->plugins as $p )
         {
             // a package is loaded only when it is licensed; a plug-in in a folder is the source (development / basic)
@@ -1981,6 +2006,8 @@ class ViewerApp
             'pluginPackage' => $package, 'licence' => $licenceText,
             'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noIn ? null : $config,
             'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noIn ? null : $j['file'], 'rawArgs' => $rawArgs,
+            // the image the run asked for by name ('' : the one of the viewer) - looked up by the job runner (ViewerContainer)
+            'image' => (string)( $j['image'] ?? '' ),
             // steps of a run with more than one pan-os-php call (import); 'network': only this step reaches the network
             'steps' => $steps ?? array( array( 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'rawArgs' => $rawArgs, 'network' => FALSE,
                 'rawEnv' => $dataEnv, 'env' => $this->resolveEnv( $dataEnv, $j['pid'], $jobDir ) ) ) );

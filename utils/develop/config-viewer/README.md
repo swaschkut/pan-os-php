@@ -498,11 +498,26 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 |---|---|
 | `PANOSPHP_VIEWER_CONTAINER` | `docker` or `podman`; empty: no container |
 | `PANOSPHP_VIEWER_CONTAINER_IMAGE` | image with pan-os-php, same version as the viewer (needed) |
+| `PANOSPHP_VIEWER_CONTAINER_IMAGES` | further images a run may use, by name: `main=swaschkut/pan-os-php:latest,beta=swaschkut/pan-os-php:beta` (compose: `VIEWER_RUN_IMAGES` in `.env`; set for the web part too - it reads only the names). See "A run with another image" |
 | `PANOSPHP_VIEWER_CONTAINER_DATA` | where the **runtime** finds the data directory: absolute path on its host, or the name of the volume that holds it. Default: `PANOSPHP_VIEWER_DATA` (job runner directly on the host) |
 | `PANOSPHP_VIEWER_CONTAINER_TOOL` | `pan-os-php.php` in the image (default `/tools/pan-os-php/utils/pan-os-php.php`) |
 | `PANOSPHP_VIEWER_CONTAINER_MEMORY`, `_CPUS` | limits per run (default `2g`, `2`; compose: `VIEWER_RUN_MEMORY`, `VIEWER_RUN_CPUS` in `.env`) |
 | `PANOSPHP_VIEWER_CONTAINER_DNS` | DNS servers (IP addresses, `,` separated) of a run step with network - for internal names (AD domain controllers, firewalls); compose: `VIEWER_RUN_DNS` in `.env`; empty: the runtime decides (Docker: the resolver of the host, or public ones when the host has only a local one) |
 | `PANOSPHP_VIEWER_CONTAINER_USER` | `uid:gid` in the container (default: the one of the job runner, so that it can read the result files) |
+
+**A run with another image.** A run type of a plug-in can have one field of kind `image`
+(`array( 'name' => 'release', 'kind' => 'image', 'label' => 'Release' )`): the run then uses another pan-os-php image -
+e.g. the same playbook with an older release, to compare the results. The user chooses a **name** from the list of
+the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`); empty = the image of the viewer.
+
+* A request, a job and a plug-in only ever hold the name (`ViewerPluginRun::image()` gives it to the plug-in, e.g.
+  for the name of a result file). The image behind a name is known to the job runner alone and comes from the setting
+  of the administrator - nobody can start an image that is not in the list.
+* Everything else of the run stays as it is: no network, read-only project, own folder, limits, the same arguments.
+* The run does not pull: the image must be on the computer (`./panosphp-viewer update` pulls the listed images).
+* The other image is another pan-os-php version: it may not know an argument or an action the viewer of today
+  builds. The run then fails with the message of that pan-os-php - the plug-in decides which arguments it sends.
+* Without one container per run there is only one pan-os-php: a run that names an image fails and says so.
 
 **Viewer itself in containers (Docker).** Three services with the same data volume: web (`api.php`), service (`bin/service.php`), job runner (`bin/jobs.php`). Only the job runner gets the Docker socket (`/var/run/docker.sock`) and the `docker` client; web and service get neither. Who controls the socket controls the host - that is why it stays in the one process that builds the call from fixed parts and takes no request from the network. The run containers are started by the Docker of the host, so `PANOSPHP_VIEWER_CONTAINER_DATA` must be the volume name (as `docker volume ls` shows it, with the compose project prefix) or the host path of the data directory, not the path inside the job runner.
 
@@ -528,7 +543,7 @@ A plug-in adds to the viewer without changing its code (`lib/ViewerPlugins.php`)
 
 | What | How it shows |
 |---|---|
-| run types | `POST …/configs/<cid>/<plugin>-<run>/runs`; in the page: the "Runs" card with the fields the plug-in declares (`text`, `location`, `select`, `multi`, `file:<kind>`) |
+| run types | `POST …/configs/<cid>/<plugin>-<run>/runs`; in the page: the "Runs" card with the fields the plug-in declares (`text`, `location`, `select`, `multi`, `file:<kind>`, `image`: another pan-os-php image by name - see "A run with another image") |
 | run types without a version (`'input' => 'none'`) | `POST …/projects/<pid>/<plugin>-<run>/runs` - the input is a project file, the result becomes a version (e.g. a migration) |
 | file kinds | files of a project for its runs: `…/files?kind=<plugin>-<kind>`, with a check by the plug-in at upload. JSON, or `'format' => 'raw'` for any file (a 3rd party configuration) with its own size limit (`'max'`, up to 200 MB) |
 | result into another project | `POST …/runs/<jid>/save` with `{"project": "<pid>"}` (write permission there): the version's note names the run and the project it comes from |

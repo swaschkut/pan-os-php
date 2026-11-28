@@ -33,6 +33,9 @@
  *   PANOSPHP_VIEWER_CONTAINER_DATA    where the runtime finds the data directory: an absolute path on the host of
  *                                     the runtime, or the name of the volume that holds it (job runner in a container).
  *                                     Default: PANOSPHP_VIEWER_DATA as the job runner sees it (job runner on the host).
+ *   PANOSPHP_VIEWER_CONTAINER_IMAGES  further images a run may use, by name: "main=swaschkut/pan-os-php:latest,beta=…"
+ *                                     (a run type of a plug-in with a field of kind "image" - e.g. the same playbook
+ *                                     with another release). A run names the NAME; the image comes from this list only
  *   PANOSPHP_VIEWER_CONTAINER_TOOL    pan-os-php.php in the image (default /tools/pan-os-php/utils/pan-os-php.php)
  *   PANOSPHP_VIEWER_CONTAINER_MEMORY  default 2g      PANOSPHP_VIEWER_CONTAINER_CPUS  default 2
  *   PANOSPHP_VIEWER_CONTAINER_NETWORK default bridge  only for a step that may reach the network (import)
@@ -45,6 +48,27 @@ class ViewerContainer
     public string $program, $image, $data, $tool, $memory, $cpus, $user, $label, $plugins, $network;
     /** @var string[] DNS servers of a run with network (empty: the ones of the runtime) */
     public array $dns = array();
+    /** @var array<string,string> name => image: the further images a run may name (PANOSPHP_VIEWER_CONTAINER_IMAGES) */
+    public array $images = array();
+
+    /**
+     * PANOSPHP_VIEWER_CONTAINER_IMAGES: "name=image" separated by "," or space. The web part reads only the names (what
+     * a form offers, what a request may name); the job runner the images.
+     * @return array<string,string> name => image
+     */
+    public static function imagesFromEnv(): array
+    {
+        $out = array();
+        foreach( preg_split( '/[\s,]+/', trim( (string)getenv( 'PANOSPHP_VIEWER_CONTAINER_IMAGES' ) ), -1, PREG_SPLIT_NO_EMPTY ) as $one )
+        {
+            if( !preg_match( '#^([a-z][a-z0-9-]{0,20})=([A-Za-z0-9][A-Za-z0-9._/:@-]{0,254})$#', $one, $m ) || isset( $out[$m[1]] ) )
+                throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_IMAGES: <name>=<image> separated by "," - a name (lower case letters, digits, -) once (' . substr( $one, 0, 60 ) . ')' );
+            $out[$m[1]] = $m[2];
+        }
+        if( count( $out ) > 20 )
+            throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_IMAGES: at most 20 images' );
+        return $out;
+    }
 
     /** null when PANOSPHP_VIEWER_CONTAINER is not set */
     public static function fromEnv( string $dataDir ): ?ViewerContainer
@@ -59,6 +83,7 @@ class ViewerContainer
         $c->image = (string)getenv( 'PANOSPHP_VIEWER_CONTAINER_IMAGE' );
         if( !preg_match( '#^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,254}$#', $c->image ) )
             throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_IMAGE must be set to the pan-os-php image' );
+        $c->images = self::imagesFromEnv();
         $c->data = rtrim( (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_DATA' ) ?: $dataDir ), '/' );
         if( !preg_match( '#^(/[A-Za-z0-9._ /-]+|[A-Za-z0-9][A-Za-z0-9_.-]*)$#', $c->data ) || strpos( $c->data, '..' ) !== FALSE )
             throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_DATA must be an absolute path or a volume name' );
@@ -105,7 +130,8 @@ class ViewerContainer
     }
 
     /**
-     * @param array $job from ViewerApp::runnerTake(): pid, jid, file, tool (pan-os-php type; default: type), rawArgs (with %FILES% / %JOB%)
+     * @param array $job from ViewerApp::runnerTake(): pid, jid, file, tool (pan-os-php type; default: type), rawArgs (with %FILES% / %JOB%),
+     *                   image (a NAME of PANOSPHP_VIEWER_CONTAINER_IMAGES; '' / not set: the image of the viewer)
      * @return string[] argument array for proc_open (no shell)
      */
     public function runCommand( array $job ): array
@@ -115,6 +141,15 @@ class ViewerContainer
                 throw new Exception( 'container: invalid ' . $k );
         if( ( $job['file'] !== null && !preg_match( '/^[0-9a-f]{32}\.xml$/', (string)$job['file'] ) ) || !preg_match( '/^[a-z-]+$/', (string)( $job['tool'] ?? $job['type'] ) ) )
             throw new Exception( 'container: invalid job' );
+        // another image: only by its name in the list of the administrator - a job never carries an image reference
+        $image = $this->image;
+        $name = (string)( $job['image'] ?? '' );
+        if( $name !== '' )
+        {
+            if( !isset( $this->images[$name] ) )
+                throw new Exception( 'image "' . substr( preg_replace( '/[^a-z0-9-]/', '', $name ), 0, 21 ) . '" is not in the list of this installation (PANOSPHP_VIEWER_CONTAINER_IMAGES)' );
+            $image = $this->images[$name];
+        }
         $args = array();
         foreach( $job['rawArgs'] as $a )
             $args[] = str_replace( array( '%FILES%', '%JOB%', '%PROJECT%' ), array( '/project/files', '/job', '/project' ), $a );
@@ -176,7 +211,7 @@ class ViewerContainer
             array_push( $cmd, '--mount', $this->mount( 'central', '/central', TRUE ) );
         if( $this->user !== '' )
             array_push( $cmd, '--user', $this->user );
-        array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ) );
+        array_push( $cmd, '--entrypoint', 'php', $image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ) );
         // a run type of a plug-in without a version has no in=
         if( $job['file'] !== null )
             $cmd[] = 'in=/project/' . $job['file'];

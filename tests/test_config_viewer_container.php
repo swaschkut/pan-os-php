@@ -38,7 +38,7 @@ function eq( $actual, $expected, $msg )
 }
 function withEnv( array $env, callable $fn )
 {
-    $all = array( 'PANOSPHP_VIEWER_CONTAINER', 'PANOSPHP_VIEWER_CONTAINER_IMAGE', 'PANOSPHP_VIEWER_CONTAINER_DATA', 'PANOSPHP_VIEWER_CONTAINER_TOOL',
+    $all = array( 'PANOSPHP_VIEWER_CONTAINER', 'PANOSPHP_VIEWER_CONTAINER_IMAGE', 'PANOSPHP_VIEWER_CONTAINER_IMAGES', 'PANOSPHP_VIEWER_CONTAINER_DATA', 'PANOSPHP_VIEWER_CONTAINER_TOOL',
         'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS', 'PANOSPHP_VIEWER_CONTAINER_NETWORK', 'PANOSPHP_VIEWER_CONTAINER_DNS' );
     foreach( $all as $k )
         putenv( isset( $env[$k] ) ? $k . '=' . $env[$k] : $k );
@@ -91,6 +91,18 @@ $cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plug
 eq( array( in_array( 'type=bind,src=/srv/plugins/migration,dst=/plugin,readonly', $cmd, TRUE ), in_array( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ),
     array_search( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ) < array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ),
     'plug-in with files: its folder read-only at /plugin, environment before the image' );
+// another image for a run: by its name in the list of the installation (PANOSPHP_VIEWER_CONTAINER_IMAGES) only
+$imgs = $base + array( 'PANOSPHP_VIEWER_CONTAINER_IMAGES' => 'beta=example.test/pan-os-php:beta, main=example.test/pan-os-php:latest' );
+$cmd = withEnv( $imgs, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'image' => 'beta' ) + $job ); } );
+$at = array_search( 'example.test/pan-os-php:beta', $cmd, TRUE );
+eq( array( $at !== FALSE, in_array( 'swaschkut/pan-os-php:develop', $cmd, TRUE ), $at !== FALSE ? array_slice( $cmd, $at - 2, 2 ) : null, in_array( 'none', $cmd, TRUE ), in_array( '--read-only', $cmd, TRUE ) ),
+    array( TRUE, FALSE, array( '--entrypoint', 'php' ), TRUE, TRUE ), 'another image: the one the name stands for, in place of the image of the viewer - the run stays without network, read-only' );
+$cmd = withEnv( $imgs, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'image' => '' ) + $job ); } );
+eq( in_array( 'swaschkut/pan-os-php:develop', $cmd, TRUE ), TRUE, 'no name: the image of the viewer' );
+foreach( array( 'alpha' => 'a name that is not in the list', 'example.test/pan-os-php:beta' => 'an image reference instead of a name', '--privileged' => 'an option of the runtime' ) as $name => $what )
+    eq( substr( (string)withEnv( $imgs, function() use ( $job, $name ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'image' => $name ) + $job ); } ), 0, 6 ), 'error:', 'another image: ' . $what . ' is refused' );
+foreach( array( 'beta' => 'no image', 'Beta=x/y:1' => 'a name with capitals', 'beta=x/y:1,beta=x/z:2' => 'a name twice', 'beta=--privileged' => 'an option as image', 'beta=x/y:1;rm' => 'other characters' ) as $value => $what )
+    eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_IMAGES' => $value ), function() { return ViewerContainer::fromEnv( '/data' ); } ), 0, 6 ), 'error:', 'PANOSPHP_VIEWER_CONTAINER_IMAGES: ' . $what . ' is refused' );
 // an encrypted plug-in: the package file read-only, the licence (one line) and %PLUGIN% = ppp://<name>
 $pp = array( 'pluginPackage' => '/plugins/migration.ppp', 'licence' => '-----BEGIN PAN-OS-PHP LICENSE-----' . str_repeat( 'QUJD', 20 ) . '-----END PAN-OS-PHP LICENSE-----' ) + $pj;
 $cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pp ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pp ); } );
@@ -253,7 +265,13 @@ copy( $repo . '/tests/input/panorama-10.0-merger.xml', $bin . '/import-upload.xm
 copy( $repo . '/tests/input/SCM-import.xml', $bin . '/import-scm-export-xml.xml' );
 file_put_contents( $bin . '/predefined-device.xml', '<predefined><application-version>9999-9999</application-version><application/></predefined>' );
 
-$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => $bin . ':' . getenv('PATH') );
+// a plug-in with a run type that can use another pan-os-php image, and the images of this installation by name
+mkdir( $bin . '/plugins/img', 0700, TRUE );
+file_put_contents( $bin . '/plugins/img/plugin.php', "<?php return array( 'api' => 1, 'name' => 'img', 'runs' => array( 'show' => array( 'tool' => 'address',
+    'fields' => array( array( 'name' => 'release', 'kind' => 'image' ) ),
+    'args' => function( \$run ) { return array( 'location=shared', 'actions=exportToExcel:addresses.html' ); } ) ) );" );
+$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => $bin . ':' . getenv('PATH'), 'PANOSPHP_VIEWER_PLUGINS' => $bin . '/plugins',
+    'PANOSPHP_VIEWER_CONTAINER_IMAGES' => 'beta=example.test/pan-os-php:beta' );
 $p = proc_open( array( PHP_BINARY, $viewer . '/bin/user.php', 'add', 'alice' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null, $env + array( 'VIEWER_PASSWORD' => 'alice-secret-1' ) );
 stream_get_contents( $pipes[1] );
 proc_close( $p );
@@ -352,6 +370,19 @@ eq( array( in_array( 'none', $c, TRUE ), in_array( '--read-only', $c, TRUE ), in
     in_array( 'type=bind,src=' . $data . '/projects/' . $pid . '/jobs/' . $jid . ',dst=/job', $c, TRUE ) ), array( TRUE, TRUE, TRUE, TRUE ), 'stats run: no network, read-only, the two mounts' );
 eq( count( array_filter( array_slice( $c, (int)$i + 1 ), function( $a ) use ( $data ) { return strpos( $a, $data ) !== FALSE; } ) ), 0, 'stats run: no path of the server in the arguments of pan-os-php' );
 eq( preg_match( '#^in=/project/[0-9a-f]{32}\.xml$#', $c[(int)$i + 3] ?? '' ), 1, 'stats run: in= is the version file in the container' );
+
+// a run of a plug-in with another image: the container is started with the image the name stands for
+$r = call( 'POST', $P . '/configs/' . $cid . '/img-show/runs', array( 'release' => 'beta' ) );
+$jidI = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $jidI );
+$c = array_values( array_filter( calls(), function( $c ) use ( $jidI ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidI, $c, TRUE ); } ) )[0] ?? array();
+eq( array( $r[1]['state'] ?? null, $r[1]['image'] ?? null, in_array( 'example.test/pan-os-php:beta', $c, TRUE ), in_array( 'pan-os-php:test', $c, TRUE ), in_array( 'none', $c, TRUE ) ),
+    array( 'done', 'beta', TRUE, FALSE, TRUE ), 'run with another image: done, started with the image of the name (not the one of the viewer), no network' );
+$r = call( 'POST', $P . '/configs/' . $cid . '/img-show/runs', array() );
+$jidV = $r[1]['jid'] ?? '';
+waitRun( $P . '/runs/' . $jidV );
+$c = array_values( array_filter( calls(), function( $c ) use ( $jidV ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidV, $c, TRUE ); } ) )[0] ?? array();
+eq( array( in_array( 'pan-os-php:test', $c, TRUE ), in_array( 'example.test/pan-os-php:beta', $c, TRUE ) ), array( TRUE, FALSE ), 'the same run type without a name: the image of the viewer' );
 
 // playbook with a BP JSON, result as version
 $r = call( 'POST', $P . '/files?kind=playbook', null, array( 'pb.json', json_encode( array( 'command' => array(

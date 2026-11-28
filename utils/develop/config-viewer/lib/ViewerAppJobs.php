@@ -368,6 +368,13 @@ trait ViewerAppJobs
             $args = array_values( $args );
             if( !$plugin['bp'] )
                 unset( $in['bp'] );
+            // another image for this run: one of the names of the installation (a request never names an image itself)
+            if( ( $plugin['imageField'] ?? null ) !== null )
+            {
+                $image = $in[$plugin['imageField']] ?? '';
+                if( $image !== '' && ( !is_string( $image ) || !in_array( $image, $this->runImages(), TRUE ) ) )
+                    throw new ViewerException( $plugin['imageField'] . ': one of the images of this installation (' . ( implode( ', ', $this->runImages() ) ?: 'none is set up' ) . ') or empty', 400 );
+            }
         }
         // the BP JSON of the project instead of the one shipped with pan-os-php
         if( isset( $in['bp'] ) )
@@ -383,8 +390,8 @@ trait ViewerAppJobs
         // a support file: what goes in is put next to the run now (hidden folder .support of the run)
         if( $type === 'support-file' )
             $args = $this->supportStage( $user, $p, $c, $jid, $in );
-        $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created) VALUES (?,?,?,?,?,?,?,?)',
-            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time() ) );
+        $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created, image) VALUES (?,?,?,?,?,?,?,?,?)',
+            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time(), ( $image ?? '' ) !== '' ? $image : null ) );
         return $this->jobGet( $user, $pid, $jid );
     }
 
@@ -638,7 +645,9 @@ trait ViewerAppJobs
     {
         return array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'args' => json_decode( $j['args'], TRUE ), 'state' => $j['state'], 'user' => $j['user'],
             'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null,
-            'finished' => $j['finished'] !== null ? (int)$j['finished'] : null, 'error' => $j['error'], 'reason' => $j['reason'] ?? null );
+            'finished' => $j['finished'] !== null ? (int)$j['finished'] : null, 'error' => $j['error'], 'reason' => $j['reason'] ?? null,
+            // the image the run asked for by name (null: the image of the viewer)
+            'image' => $j['image'] ?? null );
     }
 
     /** result files of a job: names relative to the folder of the job */

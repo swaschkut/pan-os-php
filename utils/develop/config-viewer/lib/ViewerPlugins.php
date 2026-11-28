@@ -62,7 +62,7 @@ class ViewerPlugins
     const FIELD_TYPES = array( 'text', 'int', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'select', 'bool', 'list' );
     /** types a list may hold */
     const LIST_ITEMS = array( 'text', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'hostname' );
-    const FIELD_KINDS = '/^(text|location|select|multi|secret|file:[a-z][a-z0-9-]{0,40})$/';
+    const FIELD_KINDS = '/^(text|location|select|multi|secret|image|file:[a-z][a-z0-9-]{0,40})$/';
     /** largest size limit a file kind may ask for */
     const KIND_MAX = 209715200;
 
@@ -193,7 +193,7 @@ class ViewerPlugins
             {
                 if( !is_array( $f ) || !isset( $f['name'], $f['kind'] ) || !is_string( $f['name'] ) || !preg_match( '/^[a-z][a-z0-9_]{0,30}$/', $f['name'] )
                     || !is_string( $f['kind'] ) || !preg_match( self::FIELD_KINDS, $f['kind'] ) || in_array( $f['name'], array( 'bp' ), TRUE ) )
-                    throw new Exception( 'run ' . $run . ': a field needs "name" and "kind" (text, location, select, multi, file:<kind>)' );
+                    throw new Exception( 'run ' . $run . ': a field needs "name" and "kind" (text, location, select, multi, image, file:<kind>)' );
                 $kind = $f['kind'];
                 $options = array();
                 if( $kind === 'select' || $kind === 'multi' )
@@ -217,6 +217,11 @@ class ViewerPlugins
                 $fields[] = array( 'name' => $f['name'], 'kind' => $kind, 'label' => self::text( $f['label'] ?? $f['name'], 'label', 80 ),
                     'default' => self::text( $f['default'] ?? '', 'default', 200 ), 'required' => !empty( $f['required'] ), 'options' => $options );
             }
+            // a field of kind "image": the run uses another pan-os-php image, chosen by name from the list of the
+            // installation (PANOSPHP_VIEWER_CONTAINER_IMAGES) - the viewer takes the value, the plug-in never an image
+            $imageFields = array_values( array_filter( $fields, function( $f ) { return $f['kind'] === 'image'; } ) );
+            if( count( $imageFields ) > 1 )
+                throw new Exception( 'run ' . $run . ': one field of kind "image" at most' );
             $result = $r['result'] ?? null;
             if( $result !== null && ( !is_string( $result ) || !preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}\.xml$/', $result ) ) )
                 throw new Exception( 'run ' . $run . ': "result" must be a plain .xml file name' );
@@ -238,7 +243,8 @@ class ViewerPlugins
             if( $approval !== null && ( !is_string( $approval ) || !preg_match( '#^[a-z][a-z0-9-]{0,30}/[a-z][a-z0-9_-]{0,30}$#', $approval ) ) )
                 throw new Exception( 'run ' . $run . ': "approval" must be <page>/<block>' );
             $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'feature' => $out['feature'], 'input' => $input, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
-                'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'], 'env' => $env, 'approval' => $approval );
+                'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'], 'env' => $env, 'approval' => $approval,
+                'imageField' => count( $imageFields ) ? $imageFields[0]['name'] : null );
         }
         foreach( (array)( $p['playbookTypes'] ?? array() ) as $t )
         {
@@ -619,6 +625,21 @@ class ViewerPluginRun
         if( !is_string( $v ) || !isset( $this->fields[$field]['options'][$v] ) )
             throw new ViewerException( $field . ': not one of the options', 400 );
         return $v;
+    }
+
+    /**
+     * the name chosen in the "image" field of the run type ('' = the image of the viewer) - e.g. for the name of a
+     * result file. Only the name: the image itself is known to the job runner alone.
+     */
+    public function image(): string
+    {
+        foreach( $this->fields as $f )
+            if( $f['kind'] === 'image' )
+            {
+                $v = $this->in[$f['name']] ?? '';
+                return is_string( $v ) && preg_match( '/^[a-z][a-z0-9-]{0,20}$/', $v ) ? $v : '';
+            }
+        return '';
     }
 
     /** the chosen values of a "multi" field (each one of its options); empty when not given */

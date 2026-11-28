@@ -331,6 +331,8 @@ async function showProject(pid) {
                 const input = f.kind === 'secret' ? Object.assign(el('input', { type: 'file', title: 'sensitive: only for this run - never a project file, removed when the run ends' }), { isSecret: true })
                     : kind ? el('select', {}, el('option', { value: '', text: '- choose a file -' }), files.files.filter(x => x.kind === kind).map(x => el('option', { value: x.fid, text: x.name })))
                     : f.kind === 'select' ? el('select', {}, el('option', { value: '', text: '- choose -' }), opts.map(([v, label]) => { const o = el('option', { value: v, text: label }); o.selected = v === f.default; return o; }))
+                    // another pan-os-php image for this run: the names the installation allows
+                    : f.kind === 'image' ? el('select', {}, el('option', { value: '', text: 'the image of the viewer' }), ((state.meta.plugins || {}).images || []).map(v => { const o = el('option', { value: v, text: v }); o.selected = v === f.default; return o; }))
                     : f.kind === 'multi' ? Object.assign(el('select', { multiple: true, size: Math.min(6, opts.length) }, opts.map(([v, label]) => el('option', { value: v, text: label }))), { isMulti: true })
                     : el('input', { value: f.default || '', maxlength: 200 });
                 return { f, input };
@@ -351,7 +353,7 @@ async function showProject(pid) {
             runsBody.replaceChildren(runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
-                    const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
+                    const row = el('tr', {}, el('td', { text: r.type + (r.image ? ' (image ' + r.image + ')' : ''), title: r.image ? 'run with the pan-os-php image "' + r.image + '" of this installation' : null }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
                             : r.type === 'ldap-discover' ? 'LDAP servers of ' + ((r.args || []).find(a => a.startsWith('x-ldap-discover-target=')) || '').slice(23)
                             : r.type === 'ldap' ? 'LDAP ' + ((r.args || []).find(a => a.startsWith('x-ldap-target=')) || '').slice(14).replace(/^auto:/, 'automatic: ')
                             : r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')

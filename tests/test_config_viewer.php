@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr', 'sec' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr', 'sec', 'img', 'badimg' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -44,6 +44,12 @@ foreach( array( 'badenv' => "'PANOSPHP_VIEWER_DATA' => '/tmp'", 'badenv2' => "'P
     file_put_contents( $plugins . '/' . $d . '/plugin.php', "<?php return array( 'api' => 1, 'name' => '" . $d . "', 'runs' => array( 'r' => array( 'tool' => 'address', 'env' => array( " . $e . " ),
         'args' => function( \$run ) { return array(); } ) ) );" );
 }
+// a run type that can use another pan-os-php image (field of kind "image"); two such fields are refused
+file_put_contents( $plugins . '/img/plugin.php', "<?php return array( 'api' => 1, 'name' => 'img', 'runs' => array( 'show' => array( 'tool' => 'address',
+    'fields' => array( array( 'name' => 'release', 'kind' => 'image', 'label' => 'Release' ) ),
+    'args' => function( \$run ) { return array( 'location=shared', 'actions=exportToExcel:addresses-' . ( \$run->image() !== '' ? \$run->image() : 'viewer' ) . '.html' ); } ) ) );" );
+file_put_contents( $plugins . '/badimg/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badimg', 'runs' => array( 'r' => array( 'tool' => 'address',
+    'fields' => array( array( 'name' => 'a', 'kind' => 'image' ), array( 'name' => 'b', 'kind' => 'image' ) ), 'args' => function( \$run ) { return array(); } ) ) );" );
 file_put_contents( $plugins . '/badargs/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badargs', 'runs' => array(
     'in' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'in=/etc/passwd' ); } ),
     'out' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'actions=display', 'out=/tmp/x.xml' ); } ) ) );" );
@@ -174,6 +180,8 @@ $pkRel = testPack( $plugins, 'pack', '1.0', 'test-pack', $pkFiles );
 
 // ---- users, server
 $env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins,
+    // further images a run may name (web part: the names; this test runs without containers)
+    'PANOSPHP_VIEWER_CONTAINER_IMAGES' => 'beta=example.test/pan-os-php:beta,main=example.test/pan-os-php:latest',
     'PANOSPHP_LICENSE_TEST_KEYS' => testTrustedJson( $licKeys ) );
 // the support key of the test: support files of the runs are encrypted for it (SupportFile)
 $supportKey = SupportFile::keygen( 'test-support' );
@@ -2144,11 +2152,11 @@ eq( status( $alice->call( 'DELETE', $G ) ), 200, 'grants project deleted' );
 
 // ---- 12p. plug-ins: run types, file kinds
 $m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
-eq( array_keys( $m['runs'] ?? array() ), array( 'ap-plan', 'ap-apply', 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'mig-import', 'sec-use' ), 'plug-ins: run types in meta' );
+eq( array_keys( $m['runs'] ?? array() ), array( 'ap-plan', 'ap-apply', 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'img-show', 'mig-import', 'sec-use' ), 'plug-ins: run types in meta' );
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
     array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
 eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
-eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badappr', 'badenv', 'badenv2', 'badpage', 'badtable', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
+eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badappr', 'badenv', 'badenv2', 'badimg', 'badpage', 'badtable', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
 eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
 $PL = 'projects/' . $r[1]['pid'];
@@ -2167,6 +2175,18 @@ $r = waitRun( $alice, $PL . '/runs/' . $r[1]['jid'] );
 eq( array( $r[1]['state'] ?? null, in_array( 'addresses.html', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( 'done', TRUE ), 'plug-ins: run done, result file' );
 eq( status( $alice->call( 'POST', $PL . '/runs/' . $r[1]['jid'] . '/save' ) ), 409, 'plug-ins: a run type without a result configuration can not become a version' );
 eq( status( $alice->call( 'POST', $PLC . '/example-export/runs', array( 'location' => 'a;b' ) ) ), 400, 'plug-ins: field checked' );
+// a run with another pan-os-php image: chosen by name from the list of the installation, never an image reference
+eq( array( $m['images'] ?? null, $m['runs']['img-show']['fields'][0]['kind'] ?? null ), array( array( 'beta', 'main' ), 'image' ), 'another image: the names of the installation and the field in meta (no image reference)' );
+foreach( array( array( 'alpha', 'a name that is not in the list' ), array( 'example.test/pan-os-php:beta', 'an image reference' ), array( array( 'beta' ), 'a list' ) ) as $bad )
+    eq( status( $alice->call( 'POST', $PLC . '/img-show/runs', array( 'release' => $bad[0] ) ) ), 400, 'another image: ' . $bad[1] . ' is refused' );
+$r = $alice->call( 'POST', $PLC . '/img-show/runs', array() );
+eq( array( status( $r ), array_key_exists( 'image', $r[1] ) ? $r[1]['image'] : 'missing', $r[1]['args'][1] ?? null ), array( 202, null, 'actions=exportToExcel:addresses-viewer.html' ), 'another image: not chosen - the image of the viewer' );
+eq( waitRun( $alice, $PL . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'done', 'another image: the run without a name runs as every run' );
+$r = $alice->call( 'POST', $PLC . '/img-show/runs', array( 'release' => 'beta' ) );
+eq( array( status( $r ), $r[1]['image'] ?? null, $r[1]['args'][1] ?? null ), array( 202, 'beta', 'actions=exportToExcel:addresses-beta.html' ), 'another image: queued with the name; the plug-in knows the name (ViewerPluginRun::image)' );
+$r = waitRun( $alice, $PL . '/runs/' . $r[1]['jid'] );
+eq( array( $r[1]['state'] ?? null, strpos( (string)( $r[1]['error'] ?? '' ), 'one container per run' ) !== FALSE ), array( 'failed', TRUE ),
+    'another image without containers: the run fails and says why (it does not run with the pan-os-php of the viewer)' );
 eq( status( $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array() ) ), 400, 'plug-ins: needed field missing' );
 eq( status( $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array( 'tags' => $plBp ) ) ), 400, 'plug-ins: a file of another kind is refused' );
 eq( status( $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array( 'tags' => $bpFid ) ) ), 400, 'plug-ins: a file of another project is refused' );

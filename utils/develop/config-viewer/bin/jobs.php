@@ -76,7 +76,7 @@ if( function_exists( 'pcntl_async_signals' ) )
     foreach( array( SIGTERM, SIGINT ) as $sig )
         pcntl_signal( $sig, function() use ( &$stop ) { $stop = TRUE; } );
 }
-print "config-viewer jobs: running (" . $parallel . " parallel, data " . $app->dataDir . ", " . ( $container !== null ? "one " . $container->program . " container per run, image " . $container->image : "no container" ) . ")\n";
+print "config-viewer jobs: running (" . $parallel . " parallel, data " . $app->dataDir . ", " . ( $container !== null ? "one " . $container->program . " container per run, image " . $container->image . ( count( $container->images ) ? ", further images: " . implode( ", ", array_keys( $container->images ) ) : "" ) : "no container" ) . ")\n";
 
 function jobsKill( $proc, ?string $jid = null ): void
 {
@@ -145,6 +145,12 @@ function jobsStart( array $job, int $n )
                 $env[$k] = (string)getenv( $k );
         $env['HOME'] = (string)( getenv( 'HOME' ) ?: '/' );
         unset( $env['TMPDIR'], $env['PANOSPHP_LOG_DIR'] );
+    }
+    elseif( ( $job['image'] ?? '' ) !== '' )
+    {
+        // another image needs a container per run - a run without one would silently use this pan-os-php
+        $app->runnerFinish( $job['id'], 'failed', 'the run asks for the image "' . $job['image'] . '": that needs one container per run (PANOSPHP_VIEWER_CONTAINER)' );
+        return null;
     }
     else
         $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['tool'] ), $job['config'] !== null ? array( 'in=' . $job['config'] ) : array(), $job['args'] );
