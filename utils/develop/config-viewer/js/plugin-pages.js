@@ -1,5 +1,5 @@
 /*
- * pan-os-php config viewer - browser part, pages of plug-ins (interface 2): forms, tables, approval steps.
+ * pan-os-php config viewer - browser part, pages of plug-ins (interface 2): forms, tables, approval steps, matrices.
  * Part of app.js in a file of its own: declarations only (functions, constants) - nothing runs when the file is
  * loaded. index.html loads the parts before app.js, which holds the helpers, the viewer / editor and the start.
  */
@@ -15,7 +15,7 @@ function pluginPageCard(base, key, meta) {
         const pg = await api('GET', base + '/pages/' + key);
         body.replaceChildren(pg.text ? el('p', { class: 'muted', text: pg.text }) : '',
             ...pg.blocks.map(b => b.kind === 'table' ? pluginTableBlock(base, key, b, pg.write, load)
-                : b.kind === 'matrix' ? pluginMatrixBlock(base, b)
+                : b.kind === 'matrix' ? pluginMatrixBlock(base, key, b, load)
                 : b.kind === 'approval' ? pluginApprovalBlock(base, key, b, pg.write, load) : pluginFormBlock(base, key, b, pg.write, load)));
     });
     load();
@@ -179,8 +179,19 @@ function pluginMatrixTime(ts) {
     return ts ? new Date(ts * 1000).toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 }
 
-function pluginMatrixBlock(base, b) {
+// what the last start from a matrix did, shown once after the page is drawn again: block => text
+const pluginMatrixNotes = {};
+
+function pluginMatrixBlock(base, key, b, reload) {
     const pid = decodeURIComponent(base.split('/')[1]);
+    const id = base + '/' + key + '/' + b.name;
+    // a run of a cell / the runs of an action: the server computes the matrix again and starts what it offers now
+    const start = (body, what) => run(async () => {
+        const r = await api('POST', base + '/pages/' + key + '/blocks/' + b.name + '/run', body);
+        pluginMatrixNotes[id] = { ok: r.errors.length === 0, text: what + ': ' + r.started.length + ' run(s) started'
+            + (r.not_started ? ', ' + r.not_started + ' not started' : '') + (r.errors.length ? ' - ' + r.errors.join('; ') : '') };
+        reload();
+    });
     const text = c => (c.text || c.state) + (c.at ? ' ' + pluginMatrixTime(c.at) : '');
     const links = c => {
         const a = (c.run ? c.files : []).map(f => el('a', { href: runFileLink(pid, c.run, f), target: '_blank', rel: 'noopener', title: 'open ' + f + ' in a new tab', text: f.split('/').pop() }));
@@ -189,15 +200,27 @@ function pluginMatrixBlock(base, b) {
             target: '_blank', rel: 'noopener', title: 'compare the figures of the two runs in a new tab', text: 'stats' }));
         return a.length ? el('div', { class: 'matrixfiles' }, a) : null;
     };
-    const cell = c => el('td', { title: (c.title || '') + (c.at ? (c.title ? ' - ' : '') + fmtTime(c.at) : '') || null },
+    const cell = (r, col, c) => el('td', { title: (c.title || '') + (c.at ? (c.title ? ' - ' : '') + fmtTime(c.at) : '') || null },
         c.state === 'none' && !c.text ? el('span', { class: 'muted', text: '-' }) : el('span', { class: PLUGIN_MATRIX_BADGE[c.state] || 'badge', text: text(c) }),
+        c.action ? [' ', el('button', { type: 'button', class: 'small', text: c.action, title: 'start the run of this cell',
+            onclick: () => start({ row: r.key, column: col.key }, r.label + ' / ' + col.label) })] : null,
         links(c));
     const sub = r => [r.sub, r.at ? pluginMatrixTime(r.at) : ''].filter(x => x).join(' - ');
-    return el('div', { class: 'pblock' }, el('h3', { text: b.title }), b.text ? el('p', { class: 'muted', text: b.text }) : null,
+    const actions = (b.actions || []).map(a => el('button', { type: 'button', text: a.label + ' (' + a.count + ')', title: a.title || null, disabled: a.count === 0,
+        onclick: () => { if (a.count > 1 && !confirm(a.label + ': start ' + a.count + ' runs?')) return; start({ action: a.name }, a.label); } }));
+    const note = pluginMatrixNotes[id];
+    delete pluginMatrixNotes[id];
+    const node = el('div', { class: 'pblock' }, el('h3', { text: b.title }), b.text ? el('p', { class: 'muted', text: b.text }) : null,
         b.error ? el('div', { class: 'fielderror', text: b.error }) : null,
+        note ? el('p', { class: note.ok ? 'notice' : 'fielderror', text: note.text }) : null,
+        actions.length ? el('div', { class: 'row' }, actions) : null,
         b.rows.length === 0 ? (b.error ? null : el('p', { class: 'muted', text: 'nothing to show yet' })) :
         el('div', { class: 'tablewrap' }, el('table', { class: 'plain matrix' },
             el('thead', {}, el('tr', {}, el('th', { text: '' }), b.columns.map(c => el('th', { text: c.label, title: c.title || null })))),
             el('tbody', {}, b.rows.map(r => el('tr', {}, el('td', { class: 'wrap' }, el('b', { text: r.label }), sub(r) ? el('div', { class: 'muted', text: sub(r) }) : null),
-                r.cells.map(cell)))))));
+                r.cells.map((c, i) => cell(r, b.columns[i], c))))))));
+    // while a run of the matrix runs: drawn again every 10 seconds, as long as the page is shown
+    if (b.rows.some(r => r.cells.some(c => c.state === 'running')))
+        setTimeout(() => { if (node.isConnected) reload(); }, 10000);
+    return node;
 }

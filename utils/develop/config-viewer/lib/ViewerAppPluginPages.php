@@ -176,12 +176,15 @@ trait ViewerAppPluginPages
      */
     private function matrixBlockPublic( array $p, array $b, ViewerPluginPage $view ): array
     {
-        $out = array( 'name' => $b['name'], 'kind' => 'matrix', 'title' => $b['title'], 'text' => $b['text'], 'columns' => array(), 'rows' => array(), 'error' => null );
+        $out = array( 'name' => $b['name'], 'kind' => 'matrix', 'title' => $b['title'], 'text' => $b['text'], 'columns' => array(), 'rows' => array(), 'actions' => array(), 'error' => null );
         try
         {
             $m = ( $b['cells'] )( $view );
             if( !is_array( $m ) )
                 throw new Exception( 'cells: an array with columns, rows, cells' );
+            // actions of the block: name, label and how many runs they start now (the runs are not sent to the browser)
+            foreach( self::matrixActions( $m ) as $name => $a )
+                $out['actions'][] = array( 'name' => $name, 'label' => $a['label'], 'title' => $a['title'], 'count' => count( $a['runs'] ) );
             $txt = function( $v, int $max ) { return is_scalar( $v ) ? substr( preg_replace( '/[\x00-\x1f]/', ' ', (string)$v ), 0, $max ) : ''; };
             $key = function( $v ) { if( !is_scalar( $v ) || (string)$v === '' || strlen( (string)$v ) > 200 ) throw new Exception( 'a key: text of 1 to 200 characters' ); return (string)$v; };
             $jids = array_flip( array_column( $this->q( 'SELECT jid FROM jobs WHERE project_id = ?', array( $p['id'] ) )->fetchAll(), 'jid' ) );
@@ -200,7 +203,7 @@ trait ViewerAppPluginPages
                     $c = $m['cells'][$row['key']][$ck] ?? null;
                     if( !is_array( $c ) )
                     {
-                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'at' => null, 'run' => null, 'files' => array(), 'compare' => null );
+                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'at' => null, 'run' => null, 'files' => array(), 'compare' => null, 'action' => null );
                         continue;
                     }
                     $state = in_array( $c['state'] ?? 'none', self::MATRIX_STATES, TRUE ) ? $c['state'] ?? 'none' : 'none';
@@ -213,8 +216,10 @@ trait ViewerAppPluginPages
                     $cmp = $c['compare'] ?? null;
                     $cmp = is_array( $cmp ) && count( $cmp ) === 2 && is_string( $cmp[0] ?? null ) && is_string( $cmp[1] ?? null ) && isset( $jids[$cmp[0]], $jids[$cmp[1]] ) && $cmp[0] !== $cmp[1]
                         ? array( $cmp[0], $cmp[1] ) : null;
+                    // action: a run the viewer starts for this cell (the browser gets the label only - POST …/run names the cell)
+                    $act = self::matrixRun( $c['action']['run'] ?? null ) !== null ? $txt( $c['action']['label'] ?? 'start', 40 ) : null;
                     $row['cells'][] = array( 'state' => $state, 'text' => $txt( $c['text'] ?? '', 200 ), 'title' => $txt( $c['title'] ?? '', 1000 ), 'at' => $at( $c['at'] ?? null ),
-                        'run' => $run, 'files' => $files, 'compare' => $cmp );
+                        'run' => $run, 'files' => $files, 'compare' => $cmp, 'action' => $act );
                 }
                 $out['rows'][] = $row;
                 if( count( $out['rows'] ) > 2000 )
@@ -223,8 +228,114 @@ trait ViewerAppPluginPages
         }
         catch( Throwable $e )
         {
-            $out['columns'] = array(); $out['rows'] = array();
+            $out['columns'] = array(); $out['rows'] = array(); $out['actions'] = array();
             $out['error'] = 'cells of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+        }
+        return $out;
+    }
+
+    /** runs one action may start at most (the queue of a project holds JOB_QUEUE_MAX anyway) */
+    const MATRIX_ACTION_RUNS = 500;
+
+    /**
+     * a run a matrix describes: type (a run type of the viewer), cid (the version; null: a run type without one), values
+     * (what the form of that run sends) - null: not such a description. Checked again in full when it is started.
+     */
+    private static function matrixRun( $r ): ?array
+    {
+        if( !is_array( $r ) || !is_string( $r['type'] ?? null ) || !preg_match( '/^[a-z][a-z0-9-]{0,60}$/', $r['type'] ) )
+            return null;
+        $cid = $r['cid'] ?? null;
+        if( $cid !== null && !( is_string( $cid ) && preg_match( '/^[0-9a-f]{32}$/', $cid ) ) )
+            return null;
+        $values = $r['values'] ?? array();
+        if( !is_array( $values ) || strlen( (string)json_encode( $values ) ) > 20000 )
+            return null;
+        return array( 'type' => $r['type'], 'cid' => $cid, 'values' => $values );
+    }
+
+    /** the actions of a matrix (cells() 'actions'): name => label, title, runs (valid ones only) */
+    private static function matrixActions( array $m ): array
+    {
+        $out = array();
+        foreach( array_slice( (array)( $m['actions'] ?? array() ), 0, 10 ) as $a )
+        {
+            $name = $a['name'] ?? null;
+            if( !is_string( $name ) || !preg_match( '/^[a-z][a-z0-9-]{0,40}$/', $name ) || isset( $out[$name] ) )
+                continue;
+            $runs = array();
+            foreach( (array)( $a['runs'] ?? array() ) as $r )
+                if( ( $r = self::matrixRun( $r ) ) !== null && count( $runs ) < self::MATRIX_ACTION_RUNS )
+                    $runs[] = $r;
+            $txt = function( $v, int $max ) { return is_scalar( $v ) ? substr( preg_replace( '/[\x00-\x1f]/', ' ', (string)$v ), 0, $max ) : ''; };
+            $out[$name] = array( 'label' => $txt( $a['label'] ?? $name, 60 ), 'title' => $txt( $a['title'] ?? '', 300 ), 'runs' => $runs );
+        }
+        return $out;
+    }
+
+    /**
+     * POST …/projects/<pid>/pages/<plugin>-<page>/blocks/<matrix>/run {action} | {row, column}: starts the runs of an
+     * action of the matrix, or the run of one cell. The matrix is computed again here - the browser names only the
+     * action / the cell, never a run. Every run is started as from the list of runs (jobCreate: the rights of the user,
+     * every check of the run type); when the queue of the project is full the rest is not started (started again later
+     * by the same action - the plug-in no longer offers what runs).
+     * @return array started (run ids), not_started (count), errors (at most 10 texts)
+     */
+    public function pluginMatrixRun( array $user, $pid, $key, $block, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'pages of plug-ins' );
+        $pg = $this->pluginPage( $key );
+        self::pageForProject( $p, $pg );
+        $b = is_string( $block ) ? ( $pg['blocks'][$block] ?? null ) : null;
+        if( $b === null || $b['kind'] !== 'matrix' )
+            throw new ViewerException( 'not found', 404 );
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        $saved = array_map( function( $s ) { return $s['values']; }, $stored );
+        try
+        {
+            $m = ( $b['cells'] )( new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) );
+        }
+        catch( Throwable $e )
+        {
+            throw new ViewerException( 'cells of the plug-in: ' . substr( $e->getMessage(), 0, 300 ), 500 );
+        }
+        $m = is_array( $m ) ? $m : array();
+        if( isset( $in['action'] ) )
+        {
+            $a = is_string( $in['action'] ) ? ( self::matrixActions( $m )[$in['action']] ?? null ) : null;
+            if( $a === null )
+                throw new ViewerException( 'action: not an action of this matrix', 404 );
+            $runs = $a['runs'];
+        }
+        else
+        {
+            $row = $in['row'] ?? null; $col = $in['column'] ?? null;
+            $c = is_string( $row ) && is_string( $col ) ? ( $m['cells'][$row][$col] ?? null ) : null;
+            $r = is_array( $c ) ? self::matrixRun( $c['action']['run'] ?? null ) : null;
+            if( $r === null )
+                throw new ViewerException( 'this cell has nothing to start (any more)', 409 );
+            $runs = array( $r );
+        }
+        $out = array( 'started' => array(), 'not_started' => 0, 'errors' => array() );
+        foreach( $runs as $i => $r )
+        {
+            try
+            {
+                $out['started'][] = $this->jobCreate( $user, $p['pid'], $r['cid'], $r['type'], $r['values'] )['jid'];
+            }
+            catch( ViewerException $e )
+            {
+                if( $e->getCode() === 429 )
+                {
+                    $out['not_started'] = count( $runs ) - $i;
+                    $out['errors'][] = $e->getMessage();
+                    break;
+                }
+                $out['not_started']++;
+                if( count( $out['errors'] ) < 10 )
+                    $out['errors'][] = $r['type'] . ': ' . $e->getMessage();
+            }
         }
         return $out;
     }

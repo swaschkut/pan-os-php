@@ -644,6 +644,17 @@ array( 'name' => 'grid', 'kind' => 'matrix', 'title' => 'Runs', 'cells' => funct
 a row can have `at` (a time, seconds since 1970): the viewer shows it in the time of the browser. A cell can have
 `compare` (two runs of the project with a stats result): a link "stats" opens "Compare stats" of the two in a tab.
 
+**Starting runs from a matrix.** A cell can have `action` - `array( 'label' => 'start', 'run' => array( 'type' =>
+'playbook', 'cid' => '<cid>', 'values' => array( … ) ) )` - and cells() can return `actions` for the block -
+`array( array( 'name' => 'missing', 'label' => 'Generate what is missing', 'title' => '…', 'runs' => array( <run>, … ) ) )`.
+A run is a run type of the viewer with the version and the values its form sends (playbook: playbook, then, bp, image;
+diff: run1, run2, setcommands; …). The browser gets the labels and how many runs an action starts, never the runs:
+`POST …/pages/<plugin>-<page>/blocks/<block>/run {action}` or `{row, column}` - the viewer computes the matrix again and
+starts what it offers now, each run as from the list of runs (the rights of the user, every check of the run type).
+Answer: `started` (run ids), `not_started`, `errors`; when the queue of the project is full the rest is not started
+(the same action again later). A cell that has its run by now offers nothing (409). While a cell is running the viewer
+draws the page again every 10 seconds.
+
 **What a page reads of the project** (`ViewerPluginPage`, read only): `runs()` - newest first, at most 1000: jid, type,
 cid (the version), image (name; null: the image of the viewer), state, created / started / finished, error, has_stats,
 has_result, saved, and for a playbook run `playbook` (file id or `predefined:<name>`), `then`, `bp` (file ids);

@@ -99,6 +99,21 @@ file_put_contents( $plugins . '/mx/plugin.php', <<<'MX'
                     $out['cells'][$r['cid']][$r['image'] ?? '@viewer'] = array( 'state' => $r['state'] === 'done' ? 'ok' : ( $r['state'] === 'failed' ? 'fail' : 'running' ),
                         'text' => $r['state'], 'run' => $r['jid'], 'files' => array( 'run.log', '../x', 'json/debugAPI_string.json' ) );
             $out['cells']['injected'] = array( 'x' => array( 'state' => 'ok', 'run' => str_repeat( 'f', 32 ) ) );
+            // a cell without a run: the run to start (the viewer starts it as from the list of runs); the same as an action
+            $missing = array();
+            foreach( $out['rows'] as $row )
+                foreach( $out['columns'] as $col )
+                    if( !isset( $out['cells'][$row['key']][$col['key']] ) )
+                    {
+                        $run = array( 'type' => 'playbook', 'cid' => $row['key'], 'values' => array( 'playbook' => $s['playbook'], 'then' => $s['then'] ?? null, 'bp' => $s['bp'] ?? null,
+                            'image' => $col['key'] === '@viewer' ? '' : $col['key'] ) );
+                        $out['cells'][$row['key']][$col['key']] = array( 'state' => 'none', 'action' => array( 'label' => 'start', 'run' => $run ) );
+                        $missing[] = $run;
+                    }
+            $out['actions'] = array( array( 'name' => 'missing', 'label' => 'Start what is missing', 'runs' => $missing ),
+                array( 'name' => 'bad', 'label' => 'Not allowed', 'runs' => array( array( 'type' => 'import', 'cid' => $out['rows'][0]['key'] ?? null, 'values' => array() ),
+                    array( 'type' => '../x', 'values' => array() ) ) ),
+                array( 'name' => 'Bad Name', 'runs' => array() ) );
             return $out;
         } ),
         // the compares: diff runs (what they compared, PASS / FAIL), stats compare and not 100 % of runs, the ids of the images;
@@ -2003,6 +2018,31 @@ $has = function( $a, $k ) { return is_array( $a ) && array_key_exists( $k, $a ) 
 eq( array( json_decode( $cmp['ids']['label'] ?? 'null', TRUE ), $has( $cmp['ids'] ?? null, 'at' ), $has( $cmp['ids']['cells'][0] ?? null, 'compare' ), $has( $cmp['ids']['cells'][0] ?? null, 'at' ) ),
     array( array( '@viewer' => null, 'beta' => null, 'main' => null ), null, null, null ),
     'plug-in page: the ids of the images (unknown without a container runtime); a time that is no number and a compare of runs that are not of the project are dropped' );
+// start from the matrix: the browser names the cell / the action, the viewer computes the matrix again and starts the
+// runs as from the list of runs (every check of the run type)
+$acts = array_column( $grid['actions'] ?? array(), 'count', 'name' );
+$open = null;
+foreach( $grid['rows'] ?? array() as $row )
+    foreach( $row['cells'] as $i => $c )
+        if( $open === null && ( $c['action'] ?? null ) === 'start' )
+            $open = array( 'row' => $row['key'], 'column' => $grid['columns'][$i]['key'] );
+eq( array( array_keys( $acts ), ( $acts['missing'] ?? 0 ) >= 1, $acts['bad'] ?? null, $open !== null, array_key_exists( 'action', $c0[0] ?? array() ) ? $c0[0]['action'] : 'missing' ),
+    array( array( 'missing', 'bad' ), TRUE, 1, TRUE, null ),
+    'plug-in matrix: actions with the number of runs they start (an invalid run / name left out), a cell without a run has "start"' );
+$r = $alice->call( 'POST', $MX . '/blocks/grid/run', $open ?? array() );
+$started = $r[1]['started'] ?? array();
+$job = $alice->call( 'GET', $PB . '/runs/' . ( $started[0] ?? 'x' ) );
+eq( array( status( $r ), count( $started ), $job[1]['type'] ?? null, $job[1]['cid'] ?? null, $job[1]['image'] ?? null, $r[1]['not_started'] ?? null ),
+    array( 202, 1, 'playbook', $open['row'] ?? 'x', $open['column'] === '@viewer' ? null : ( $open['column'] ?? 'x' ), 0 ),
+    'plug-in matrix: the run of a cell started (type, version and image of the cell)' );
+waitRun( $alice, $PB . '/runs/' . ( $started[0] ?? 'x' ) );
+$r2 = $alice->call( 'POST', $MX . '/blocks/grid/run', $open ?? array() );
+$rb2 = $alice->call( 'POST', $MX . '/blocks/grid/run', array( 'action' => 'bad' ) );
+eq( array( status( $r2 ), status( $rb2 ), $rb2[1]['started'] ?? null, $rb2[1]['not_started'] ?? null, count( $rb2[1]['errors'] ?? array() ),
+        status( $alice->call( 'POST', $MX . '/blocks/grid/run', array( 'action' => 'nope' ) ) ), status( $alice->call( 'POST', $MX . '/blocks/settings/run', array( 'action' => 'missing' ) ) ),
+        status( $alice->call( 'POST', $MX . '/blocks/grid/run', array( 'row' => 'injected', 'column' => 'x' ) ) ), status( $bob->call( 'POST', $MX . '/blocks/grid/run', array( 'action' => 'missing' ) ) ) ),
+    array( 409, 200, array(), 1, 1, 404, 404, 409, 404 ),
+    'plug-in matrix: a cell that has its run now offers nothing (409); a run the viewer refuses is reported, not started; unknown action / no matrix / a cell the plug-in did not list / no access are refused' );
 eq( array( $blk['broken']['error'] ?? null, $blk['broken']['rows'] ?? null, status( $alice->call( 'PUT', $MX . '/blocks/grid', array( 'values' => array() ) ) ) ),
     array( 'cells of the plug-in: plug-in failure', array(), 405 ), 'plug-in matrix: an error of the plug-in is shown in its block; a matrix can not be saved' );
 // a project type without roles: set like any other, no binding needed

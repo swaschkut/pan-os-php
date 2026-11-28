@@ -431,6 +431,12 @@ try
             viewerOut( $app->pluginPageGet( $user, $pid, $route[3] ) );
         if( $sub === 'pages' && $n == 6 && $route[4] === 'blocks' && $method === 'PUT' )
             viewerOut( $app->pluginPageSave( $user, $pid, $route[3], $route[5], viewerBody() ) );
+        // a matrix of a page: …/blocks/<block>/run  POST {action} | {row, column} - the runs of an action / of a cell
+        if( $sub === 'pages' && $n == 7 && $route[4] === 'blocks' && $route[6] === 'run' && $method === 'POST' )
+        {
+            $r = $app->pluginMatrixRun( $user, $pid, $route[3], $route[5], viewerBody() );
+            viewerOut( $r, count( $r['started'] ) ? 202 : 200 );
+        }
         // scope of the SCM import of the project: PUT {kind, areas, egress, config_scope}
         if( $n == 3 && $sub === 'import-scope' && $method === 'PUT' )
             viewerOut( $app->importScopeSet( $user, $pid, viewerBody() ) );
