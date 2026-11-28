@@ -128,4 +128,56 @@ class StatsCompare
         $out['same'] = $out['equal'] && $out['only_a'] === 0 && $out['only_b'] === 0 && !count( $out['blocks_only_a'] ) && !count( $out['blocks_only_b'] );
         return $out;
     }
+
+    /**
+     * components left out of "not 100 %": they depend on the environment of the customer, a playbook can not bring
+     * them to 100 % (type=playbook-validation compare-stats-not-100)
+     */
+    const NOT_FULL_EXCLUDE = array( 'Data Filtering', 'App-ID', 'User-ID', 'Service/Port', 'Zone Protection' );
+
+    /**
+     * the components of one statistics block whose percentage is not 100 ("N/A" = nothing to check: no statement)
+     * @param array $block figures of a block (blocks())
+     * @param string $part 'visibility' | 'best-practice' | 'adoption'
+     * @param string[]|null $exclude component names that are left out (default: NOT_FULL_EXCLUDE)
+     * @return array<string,array> component => array( 'value' => …, 'group' => … ) as in the stats result
+     */
+    public static function notFull( array $block, string $part = 'visibility', ?array $exclude = null ): array
+    {
+        $exclude = $exclude ?? self::NOT_FULL_EXCLUDE;
+        $out = array();
+        $list = $block['percentage'][$part] ?? null;
+        if( !is_array( $list ) )
+            return $out;
+        foreach( $list as $name => $details )
+        {
+            if( in_array( $name, $exclude, TRUE ) || !is_array( $details ) || !array_key_exists( 'value', $details ) )
+                continue;
+            if( $details['value'] === 'N/A' || $details['value'] === 100 )
+                continue;
+            $out[$name] = $details;
+        }
+        return $out;
+    }
+
+    /**
+     * "not 100 %" of two stats results next to each other: every component that is not 100 in one of them, with the
+     * value of both (null: the result has no such block / component)
+     * @return array[] list of array( 'block', 'name', 'group', 'a', 'b' ) - the blocks in the order of the results
+     */
+    public static function notFullBoth( $a, $b, string $part = 'visibility', ?array $exclude = null ): array
+    {
+        $ba = self::blocks( $a );
+        $bb = self::blocks( $b );
+        $out = array();
+        foreach( array_unique( array_merge( array_keys( $ba ), array_keys( $bb ) ) ) as $header )
+        {
+            $na = isset( $ba[$header] ) ? self::notFull( $ba[$header], $part, $exclude ) : array();
+            $nb = isset( $bb[$header] ) ? self::notFull( $bb[$header], $part, $exclude ) : array();
+            foreach( array_unique( array_merge( array_keys( $na ), array_keys( $nb ) ) ) as $name )
+                $out[] = array( 'block' => (string)$header, 'name' => (string)$name, 'group' => $na[$name]['group'] ?? ( $nb[$name]['group'] ?? null ),
+                    'a' => $ba[$header]['percentage'][$part][$name]['value'] ?? null, 'b' => $bb[$header]['percentage'][$part][$name]['value'] ?? null );
+        }
+        return $out;
+    }
 }

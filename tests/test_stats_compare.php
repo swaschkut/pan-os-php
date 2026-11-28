@@ -71,6 +71,30 @@ $eq( StatsCompare::compare( $folder, $typed )['changed'], 1, 'a number and the s
 $twice = array( array( 'header' => 'h', 'x' => 1 ), array( 'header' => 'h', 'x' => 2 ) );
 $eq( array_keys( StatsCompare::blocks( $twice ) ), array( 'h', 'h #2' ), 'the same header twice: two blocks' );
 
+// ---- visibility not 100 % (compare-stats-not-100)
+$pct = array( 'visibility' => array( 'Logging' => array( 'value' => 100, 'group' => 'Logging' ), 'Antivirus Profiles' => array( 'value' => 40, 'group' => 'Threat Prevention' ),
+    'URL Filtering Profiles' => array( 'value' => 'N/A', 'group' => 'URL' ), 'App-ID' => array( 'value' => 10, 'group' => 'Apps, Users, Ports' ),
+    'Zone Protection' => array( 'value' => 0, 'group' => 'Zone Protection' ) ), 'best-practice' => array( 'Logging' => array( 'value' => 20, 'group' => 'Logging' ) ) );
+$full = array( 'header' => 'whole configuration', 'percentage' => $pct );
+$eq( StatsCompare::notFull( $full ), array( 'Antivirus Profiles' => array( 'value' => 40, 'group' => 'Threat Prevention' ) ),
+    'not 100 %: only what is not 100 - without "N/A" and without the components left out (App-ID, Zone Protection, …)' );
+$eq( array( array_keys( StatsCompare::notFull( $full, 'best-practice' ) ), array_keys( StatsCompare::notFull( $full, 'visibility', array() ) ), StatsCompare::notFull( array( 'header' => 'x' ) ) ),
+    array( array( 'Logging' ), array( 'Antivirus Profiles', 'App-ID', 'Zone Protection' ), array() ), 'not 100 %: another part, no exclusions, a block without percentages' );
+// the first block of a result is the whole configuration - in both forms of the JSON (the old index statistic[0][0]
+// does not exist in the form with headers: the check of the command line found nothing)
+$shadowPct = array( 'statistic' => array( array( 'whole configuration' => $full, 'dg1' => array( 'header' => 'dg1', 'percentage' => $pct ) ) ) );
+$b1 = StatsCompare::blocks( $shadowPct ); $b2 = StatsCompare::blocks( array( $full ) );
+$eq( array( isset( $shadowPct['statistic'][0][0] ), array_keys( StatsCompare::notFull( reset( $b1 ) ) ), array_keys( StatsCompare::notFull( reset( $b2 ) ) ) ),
+    array( FALSE, array( 'Antivirus Profiles' ), array( 'Antivirus Profiles' ) ), 'not 100 % of the first block, from both forms' );
+// two results next to each other: B has brought Antivirus to 100, and has a component A does not know
+$fullB = $full; $fullB['percentage']['visibility']['Antivirus Profiles']['value'] = 100;
+$fullB['percentage']['visibility']['New Component'] = array( 'value' => 50, 'group' => 'New' );
+$eq( StatsCompare::notFullBoth( array( $full ), array( $fullB ) ), array(
+        array( 'block' => 'whole configuration', 'name' => 'Antivirus Profiles', 'group' => 'Threat Prevention', 'a' => 40, 'b' => 100 ),
+        array( 'block' => 'whole configuration', 'name' => 'New Component', 'group' => 'New', 'a' => null, 'b' => 50 ) ),
+    'not 100 % of two results: every component that is not 100 in one of them, with the value of both' );
+$eq( StatsCompare::notFullBoth( array( $fullB ), array( $fullB ), 'visibility', array() )[0]['name'] ?? null, 'App-ID', 'not 100 % of two results: own list of exclusions' );
+
 // ---- type=playbook-validation compare-stats-dev-beta uses it (synthetic working folder)
 $dir = sys_get_temp_dir() . '/statscmp-' . getmypid();
 foreach( array( 'origin', 'dev', 'beta', 'validation_files/playbook', 'validation_files/bp_setting' ) as $d )

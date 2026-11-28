@@ -757,6 +757,8 @@ trait ViewerAppJobs
             foreach( $d as $k => $v )
                 $r['blocks'][$header][$k] = (object)$v;
         $r['blocks'] = (object)$r['blocks'];
-        return array( 'a' => $a['run'], 'b' => $b['run'] ) + $r;
+        // visibility not 100 % in A or B, with the value of both (compare-stats-not-100 of type=playbook-validation)
+        return array( 'a' => $a['run'], 'b' => $b['run'], 'not_full' => StatsCompare::notFullBoth( $a['json'], $b['json'] ),
+            'not_full_excluded' => StatsCompare::NOT_FULL_EXCLUDE ) + $r;
     }
 }

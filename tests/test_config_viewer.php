@@ -1845,6 +1845,9 @@ foreach( (array)( $r[1]['blocks'] ?? array() ) as $header => $d )
             $chg[] = $ft['to'] - $ft['from'];
 eq( array( status( $r ), $xml3 !== $xml, $r[1]['equal'] ?? null, ( $r[1]['changed'] ?? 0 ) > 0, count( $chg ) > 0 && min( $chg ) === -1 && max( $chg ) === -1, $r[1]['a']['jid'] ?? null, $r[1]['b']['version'] ?? null ),
     array( 200, TRUE, FALSE, TRUE, TRUE, $sA, 'p-less.xml' ), 'stats compare: two stats runs - the figure "security rules" is one lower in the second, both runs named with their version' );
+$nf = $r[1]['not_full'] ?? null;
+eq( array( is_array( $nf ) && count( $nf ) > 0, array_keys( $nf[0] ?? array() ), count( array_intersect( array_column( (array)$nf, 'name' ), (array)( $r[1]['not_full_excluded'] ?? array( 'x' ) ) ) ), in_array( 'App-ID', $r[1]['not_full_excluded'] ?? array(), TRUE ) ),
+    array( TRUE, array( 'block', 'name', 'group', 'a', 'b' ), 0, TRUE ), 'stats compare: visibility not 100 % of both runs (component, value in A and B), without the components left out' );
 $r = $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . $sA );
 eq( status( $r ), 400, 'stats compare: the same run twice is refused' );
 eq( array( status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . basename( $drun ) ) ), status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . str_repeat( 'f', 32 ) ) ),

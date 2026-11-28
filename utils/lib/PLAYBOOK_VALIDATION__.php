@@ -837,43 +837,15 @@ class PLAYBOOK_VALIDATION__
                     // 1. Decode the JSON string into a PHP associative array
                     $data = json_decode(file_get_contents($file1), true);
 
-                    $data = $data['statistic'][0][0]['percentage'] ?? null;
-
-                    // 2. Define your exclusion list
-                    $exclusions = [
-                        'Data Filtering',
-                        'App-ID',
-                        'User-ID',
-                        'Service/Port', // json_decode automatically handles the escaped forward slash
-                        'Zone Protection'
-                    ];
-
-                    $results = [];
-
-                    // 3. Loop through the visibility items
-                    if (isset($data['visibility']))
-                    {
-                        foreach ($data['visibility'] as $name => $details) {
-
-                            // Condition A: Exclude specific names
-                            if (in_array($name, $exclusions)) {
-                                continue;
-                            }
-
-                            // N/A: nothing checked, no statement
-                            if ($details['value'] === "N/A") {
-                                continue;
-                            }
-
-                            // Condition B: Filter for values that are NOT 100
-                            if ($details['value'] !== 100)
-                            {
-                                // Save matching elements to our results array
-                                $results[$name] = $details;
-                                $validation[$config]['percentage'] = false;
-                            }
-                        }
-                    }
+                    // the first statistics block is the whole configuration. StatsCompare::notFull - the same code as the
+                    // config viewer: visibility components that are not 100 %, without "N/A" (nothing to check) and
+                    // without StatsCompare::NOT_FULL_EXCLUDE (Data Filtering, App-ID, User-ID, Service/Port, Zone Protection).
+                    // (Before: $data['statistic'][0][0] - an index that does not exist since the blocks are named by
+                    // their header, 2.1.57: the check found nothing, whatever the figures were.)
+                    $blocks = StatsCompare::blocks( $data );
+                    $results = count( $blocks ) ? StatsCompare::notFull( reset( $blocks ) ) : array();
+                    if( count( $results ) )
+                        $validation[$config]['percentage'] = false;
 
                     // 4. Output the filtered results
                     print_r($results);

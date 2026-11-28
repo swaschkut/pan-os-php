@@ -57,7 +57,22 @@ async function showStatsCompare(pid, jidA, jidB) {
             r.blocks_only_a.length ? el('p', { class: 'wrap' }, el('b', { text: 'Statistics blocks only in A: ' }), r.blocks_only_a.join('; ')) : null,
             r.blocks_only_b.length ? el('p', { class: 'wrap' }, el('b', { text: 'Statistics blocks only in B: ' }), r.blocks_only_b.join('; ')) : null,
             r.same ? el('p', { text: 'Both runs have the same figures with the same values.' }) : null);
-        out.replaceChildren(summary, ...blocks.map(h => {
+        // visibility not 100 %: every component that is not 100 in A or in B, with the value of both; the first statistics
+        // block is the whole configuration (what compare-stats-not-100 of type=playbook-validation checks), the other
+        // blocks are folded
+        const nf = r.not_full || [], first = nf.length ? nf[0].block : null;
+        const pct = v => v === null || v === undefined ? '-' : typeof v === 'number' ? v + ' %' : String(v);
+        const nfTable = rows => table(['Component', 'Group', 'A', 'B'], rows.map(x => el('tr', {}, el('td', { text: x.name }), el('td', { class: 'muted', text: x.group || '' }),
+            el('td', {}, el('span', { class: x.a === 100 ? 'badge ok' : x.a === null || x.a === 'N/A' ? 'badge' : 'badge warn', text: pct(x.a) })),
+            el('td', {}, el('span', { class: x.b === 100 ? 'badge ok' : x.b === null || x.b === 'N/A' ? 'badge' : 'badge warn', text: pct(x.b) })))));
+        const rest = [...new Set(nf.filter(x => x.block !== first).map(x => x.block))];
+        const notFull = el('div', { class: 'card' }, el('h3', { text: 'Visibility not 100 %' }),
+            el('p', { class: 'muted', text: 'Components whose visibility is not 100 % in A or in B. Left out: "N/A" (nothing to check) and ' + (r.not_full_excluded || []).join(', ') + '.' }),
+            nf.length === 0 ? el('p', {}, el('span', { class: 'badge ok', text: 'everything is 100 % in A and B' })) :
+            [el('p', {}, el('b', { text: first })), nfTable(nf.filter(x => x.block === first)),
+                rest.length ? el('details', { class: 'statsonly' }, el('summary', { text: 'the other statistics blocks (' + rest.length + ')' }),
+                    rest.map(h => [el('p', {}, el('b', { text: h })), nfTable(nf.filter(x => x.block === h))])) : null]);
+        out.replaceChildren(summary, notFull, ...blocks.map(h => {
             const d = r.blocks[h], changed = Object.keys(d.changed);
             return el('div', { class: 'card' }, el('h3', { text: h }),
                 changed.length ? table(['Figure', 'A', 'B', 'B - A'], changed.map(n => el('tr', {}, el('td', { class: 'wrap', text: n }),

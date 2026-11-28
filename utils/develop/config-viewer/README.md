@@ -508,7 +508,8 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 **Stats compare.** "Compare stats" at a finished stats run (list of runs, when the project has two of them) opens a
 tab that compares the figures of two stats runs: per statistics block what differs (A, B, B - A), and folded what only
 one of them has. The lists name each run by its version with the note of the version (which run / pan-os-php image
-made it). The compare is `StatsCompare` of pan-os-php - the same code as `type=playbook-validation compare-stats-…`.
+made it). A card "Visibility not 100 %" lists the components that are not 100 % in one of the two runs, with the value
+of both. The compare is `StatsCompare` of pan-os-php - the same code as `type=playbook-validation compare-stats-…`.
 API: `GET …/projects/<pid>/runs/<jid>/stats-compare?other=<jid>`. A text result file of a run (run.log, JSON, XML,
 set commands) opens in a tab as well instead of a download ("Result files").
 
