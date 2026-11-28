@@ -377,6 +377,9 @@ async function showProject(pid) {
                                 if (openFiles.has(r.jid)) openFiles.delete(r.jid); else openFiles.add(r.jid);
                                 await drawRuns();
                             }) }), ' ',
+                            // the figures of this stats run compared with another one (e.g. the same playbook with two images)
+                            r.type === 'stats' && r.state === 'done' && runs.filter(x => x.type === 'stats' && x.state === 'done').length > 1
+                                ? [el('a', { class: 'button', href: statsCompareLink(pid, r.jid), target: '_blank', rel: 'noopener', title: 'compare the figures of this stats run with another one, in a new tab', text: 'Compare stats' }), ' '] : null,
                             canWrite && (r.type === 'playbook' || r.type === 'object-merger' || r.type === 'rule-merger' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
                                 const to = ev.target.parentNode.querySelector('select').value;
                                 await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });

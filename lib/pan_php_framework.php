@@ -166,6 +166,7 @@ require_once $basedir . '/misc-classes/trait/GlobalProtectObjectEdit.php';
 require_once $basedir . '/misc-classes/DH.php';
 require_once $basedir . '/misc-classes/PH.php';
 require_once $basedir . '/misc-classes/ConfigObjectSplit.php';
+require_once $basedir . '/misc-classes/StatsCompare.php';
 
 require_once $basedir . '/misc-classes/RQuery.php';
 require_once $basedir . '/misc-classes/RQueryContext.php';

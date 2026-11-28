@@ -505,6 +505,13 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 | `PANOSPHP_VIEWER_CONTAINER_DNS` | DNS servers (IP addresses, `,` separated) of a run step with network - for internal names (AD domain controllers, firewalls); compose: `VIEWER_RUN_DNS` in `.env`; empty: the runtime decides (Docker: the resolver of the host, or public ones when the host has only a local one) |
 | `PANOSPHP_VIEWER_CONTAINER_USER` | `uid:gid` in the container (default: the one of the job runner, so that it can read the result files) |
 
+**Stats compare.** "Compare stats" at a finished stats run (list of runs, when the project has two of them) opens a
+tab that compares the figures of two stats runs: per statistics block what differs (A, B, B - A), and folded what only
+one of them has. The lists name each run by its version with the note of the version (which run / pan-os-php image
+made it). The compare is `StatsCompare` of pan-os-php - the same code as `type=playbook-validation compare-stats-…`.
+API: `GET …/projects/<pid>/runs/<jid>/stats-compare?other=<jid>`. A text result file of a run (run.log, JSON, XML,
+set commands) opens in a tab as well instead of a download ("Result files").
+
 **A run with another image.** A run can use another pan-os-php image - e.g. the same playbook with an older release,
 to compare the results (playbook run per release, "Result as new version", then a diff run between the two versions).
 The user chooses a **name** from the list of the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`); empty = the image

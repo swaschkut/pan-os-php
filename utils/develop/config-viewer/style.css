@@ -13,6 +13,9 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 button, input, select { font: inherit; }
 button { padding: 5px 11px; border: 1px solid var(--line); border-radius: 4px; background: #fff; cursor: pointer; }
 button:hover { border-color: var(--accent); }
+/* a link that looks like a button (opens a tab) */
+a.button { display: inline-block; padding: 5px 11px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: inherit; text-decoration: none; }
+a.button:hover { border-color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button.danger { color: var(--warn); }
 button.link { border: 0; padding: 0; color: var(--accent); background: none; text-decoration: underline; }
@@ -45,6 +48,9 @@ pre.log { max-height: 240px; overflow: auto; background: var(--bg); border: 1px 
 .token { width: 100%; font-family: monospace; }
 .filelink { display: inline-block; margin: 2px 14px 2px 0; }
 .filelink .filedl { margin-left: 6px; font-size: 12px; }
+/* stats compare: what exists in one run only, folded */
+details.statsonly { margin-top: 10px; }
+details.statsonly summary { cursor: pointer; color: var(--accent); }
 /* a result file of a run shown in the page: line numbers and text scroll together */
 .fileview { display: flex; align-items: flex-start; overflow: auto; max-height: calc(100vh - 230px); border: 1px solid var(--line); border-radius: 6px; background: #fff; font-size: 12px; }
 .fileview pre { margin: 0; padding: 8px 10px; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }

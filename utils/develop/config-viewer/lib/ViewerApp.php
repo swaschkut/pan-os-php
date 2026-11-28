@@ -46,6 +46,8 @@ require_once dirname(__FILE__) . '/ViewerAppKeys.php';
 require_once dirname(__FILE__) . '/ViewerAppContentData.php';
 require_once dirname(__FILE__) . '/ViewerAppLdap.php';
 require_once dirname(__FILE__) . '/../../../../lib/misc-classes/ConfigObjectSplit.php';
+// compare of two stats results: the same code as type=playbook-validation compare-stats-…
+require_once dirname(__FILE__) . '/../../../../lib/misc-classes/StatsCompare.php';
 
 class ViewerException extends Exception
 {

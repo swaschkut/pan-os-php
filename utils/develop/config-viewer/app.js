@@ -70,7 +70,7 @@ function main(...nodes) { clearTimers(); const m = document.getElementById('main
 // ---------------------------------------------------------------- parts in files of their own (js/, loaded by index.html before this file):
 // js/account.js, js/projects.js, js/plugin-pages.js, js/editors.js, js/ldap.js, js/scm.js, js/merger.js, js/project-tools.js,
 // js/viewer-fields.js (the fields of the object windows of the viewer), js/viewer-object.js (the windows of the viewer),
-// js/run-file.js (a result file of a run shown in a tab)
+// js/run-file.js (a result file of a run shown in a tab), js/stats-compare.js (two stats runs compared, in a tab)
 
 // ---------------------------------------------------------------- viewer / editor
 // preset (a link "Open" of a reference, in a new window): type, entry (menu entry of the object's class), ruletype, securityprofiletype, location, filter
@@ -770,6 +770,8 @@ async function openFromHash() {
     const h = new URLSearchParams(location.hash.slice(1));
     // a result file of a run in a tab of its own: #p=<project>&run=<run>&file=<name> (js/run-file.js)
     if (h.get('p') && h.get('run') && h.get('file')) { await showRunFile(h.get('p'), h.get('run'), h.get('file')); return true; }
+    // the figures of two stats runs compared: #p=<project>&stats=<run>[&other=<run>] (js/stats-compare.js)
+    if (h.get('p') && h.get('stats')) { await showStatsCompare(h.get('p'), h.get('stats'), h.get('other')); return true; }
     if (!h.get('p') || !h.get('c')) return false;
     history.replaceState(null, '', location.pathname);
     const p = await api('GET', 'projects/' + encodeURIComponent(h.get('p')));

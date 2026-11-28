@@ -718,4 +718,45 @@ trait ViewerAppJobs
             }
         throw new ViewerException( 'not found', 404 );
     }
+
+    /** the result file of a stats run with its figures (type=stats … json-to-folder debugapi) */
+    const STATS_RESULT_FILE = 'json/debugAPI_string.json';
+
+    /** a finished stats run of the project with what tells it apart from another one: version, note of the version, image */
+    private function statsRun( array $p, $jid ): array
+    {
+        $j = $this->jobRow( $p, $jid );
+        if( $j['type'] !== 'stats' || $j['state'] !== 'done' )
+            throw new ViewerException( 'stats compare: a finished stats run', 409 );
+        $c = $j['config_id'] !== null ? $this->q( 'SELECT name, note FROM configs WHERE id = ?', array( $j['config_id'] ) )->fetch() : FALSE;
+        $file = $this->jobDir( $p, $j['jid'] ) . '/' . self::STATS_RESULT_FILE;
+        if( !is_file( $file ) || is_link( $file ) || filesize( $file ) > self::JOB_FILE_MAX )
+            throw new ViewerException( 'stats compare: the run has no stats result (' . self::STATS_RESULT_FILE . ')', 409 );
+        $json = json_decode( (string)file_get_contents( $file ), TRUE );
+        if( !is_array( $json ) )
+            throw new ViewerException( 'stats compare: the stats result of the run can not be read', 409 );
+        return array( 'run' => self::jobPublic( $j ) + array( 'version' => $c ? $c['name'] : null, 'note' => $c ? $c['note'] : null ), 'json' => $json );
+    }
+
+    /**
+     * Compare of the figures of two stats runs of a project (e.g. the result of the same playbook with two pan-os-php
+     * images): StatsCompare - the code of type=playbook-validation compare-stats-…, plus what exists in one of them only.
+     * @return array a, b (the runs), and the result of StatsCompare::compare()
+     */
+    public function jobStatsCompare( array $user, $pid, $jid, $other ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'a run' );
+        $a = $this->statsRun( $p, $jid );
+        $b = $this->statsRun( $p, $other );
+        if( $a['run']['jid'] === $b['run']['jid'] )
+            throw new ViewerException( 'stats compare: choose two different runs', 400 );
+        $r = StatsCompare::compare( $a['json'], $b['json'] );
+        // lists of names stay objects in JSON also when they are empty
+        foreach( $r['blocks'] as $header => $d )
+            foreach( $d as $k => $v )
+                $r['blocks'][$header][$k] = (object)$v;
+        $r['blocks'] = (object)$r['blocks'];
+        return array( 'a' => $a['run'], 'b' => $b['run'] ) + $r;
+    }
 }

@@ -769,35 +769,37 @@ class PLAYBOOK_VALIDATION__
                         die("Error parsing JSON data: " . json_last_error_msg());
                     }
 
-                    $statOriginal = $json1['statistic'] ?? null;
-                    $statOther = $json2['statistic'] ?? null;
+                    // StatsCompare: the same compare as the config viewer (stats compare of two runs). Blocks are matched
+                    // by their header; "different" is, as before, a figure that both files have with another value -
+                    // what only one file has is listed, it does not make the result different
+                    $cmp = StatsCompare::compare( $json1, $json2 );
+                    $only = array();
+                    foreach( $cmp['blocks'] as $header => $d )
+                        foreach( array( 'only_a' => $file1, 'only_b' => $file2 ) as $side => $file )
+                            if( count( $d[$side] ) )
+                                $only[$file][$header] = array_keys( $d[$side] );
+                    if( count( $cmp['blocks_only_a'] ) )
+                        $only[$file1]['statistics blocks'] = $cmp['blocks_only_a'];
+                    if( count( $cmp['blocks_only_b'] ) )
+                        $only[$file2]['statistics blocks'] = $cmp['blocks_only_b'];
 
-                    //due to header changes in 2.1.57.beta
-                    $tmp_array = array();
-                    foreach( $statOriginal as $key => $value )
-                        $tmp_array[] = $value;
-                    $statOriginal = $tmp_array;
-                    $tmp_array = array();
-                    foreach( $statOther as $key => $value )
-                        $tmp_array[] = $value;
-                    $statOther = $tmp_array;
-
-                    ////
-                    ///
-                    // 3. Run the comparison starting strictly on the extracted statistics data
-                    $diff = $this->getJsonChangesOnly($statOriginal, $statOther);
-
-                    if( empty($diff) )
+                    if( $cmp['equal'] )
                     {
                         if( $validation[$config]['stats'] !== false )
                             $validation[$config]['stats'] = true;
                     }
                     else
                     {
-                        // 4. Output results
+                        // 4. Output results: per statistics block the figures with from / to
+                        $diff = array();
+                        foreach( $cmp['blocks'] as $header => $d )
+                            if( count( $d['changed'] ) )
+                                $diff[$header] = $d['changed'];
                         echo json_encode($diff, JSON_PRETTY_PRINT);
                         $validation[$config]['stats'] = false;
                     }
+                    if( count( $only ) )
+                        print "\n".$inline."only in one of the two files (not counted as a difference):\n".json_encode( $only, JSON_PRETTY_PRINT )."\n";
 
                 }
             }
@@ -1186,49 +1188,5 @@ class PLAYBOOK_VALIDATION__
         } else {
             echo "Failed to execute command.\n";
         }
-    }
-
-
-
-
-    
-
-    /**
-     * * Recursively finds keys that exist in $original but have different values in $other.
-     * * Ignores any newly added keys.
-     * */
-    function getJsonChangesOnly(array $original, array $other): array
-    {
-        $changes = [];
-
-        foreach($original as $key => $value)
-        {
-            // Ignore if the key doesn't exist in the new payload
-            if(!array_key_exists($key, $other)){
-                continue;
-            }
-
-            if(is_array($value) && is_array($other[$key]))
-            {
-                $nestedChanges = $this->getJsonChangesOnly($value, $other[$key]);
-                if(!empty($nestedChanges))
-                {
-                    $changes[$key] = $nestedChanges;
-                }
-            }
-            else
-            {
-                // Validate if the value has really changed
-                if($value !== $other[$key])
-                {
-                    $changes[$key] = [
-                        'from' => $value,
-                        'to' => $other[$key]
-                    ];
-                }
-            }
-        }
-
-        return $changes;
     }
 }

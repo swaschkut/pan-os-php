@@ -1831,6 +1831,25 @@ $log = (string)$alice->call( 'GET', $drun . '/files/run.log' )[1];
 eq( array( $r[1]['state'] ?? null, strpos( $set, 'set shared address "shared-host1" ip-netmask 9.9.9.9/32' ) !== FALSE, strpos( $log, 'in=' ) === FALSE, strpos( $log, $data ) ),
     array( 'done', TRUE, TRUE, FALSE ), 'diff: done - set commands from file1 to file2, no in=' );
 // with the set commands the XML differences stay in run.log (type=diff alone prints only the set commands then)
+// stats compare: the figures of two finished stats runs of the project (two versions: one security rule less in the second)
+$xml3 = preg_replace( '#(<security>\s*<rules>\s*)<entry name=.*?</entry>#s', '$1', $xml, 1 );
+$more = $alice->call( 'POST', $PB . '/configs', null, array( 'p-less.xml', $xml3 ) )[1]['cid'] ?? '';
+$sA = $alice->call( 'POST', $PBC . '/stats/runs', array() )[1]['jid'] ?? '';
+$sB = $alice->call( 'POST', $PB . '/configs/' . $more . '/stats/runs', array() )[1]['jid'] ?? '';
+waitRun( $alice, $PB . '/runs/' . $sA ); waitRun( $alice, $PB . '/runs/' . $sB );
+$r = $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . $sB );
+$chg = array();
+foreach( (array)( $r[1]['blocks'] ?? array() ) as $header => $d )
+    foreach( (array)$d['changed'] as $name => $ft )
+        if( $name === 'security rules' )
+            $chg[] = $ft['to'] - $ft['from'];
+eq( array( status( $r ), $xml3 !== $xml, $r[1]['equal'] ?? null, ( $r[1]['changed'] ?? 0 ) > 0, count( $chg ) > 0 && min( $chg ) === -1 && max( $chg ) === -1, $r[1]['a']['jid'] ?? null, $r[1]['b']['version'] ?? null ),
+    array( 200, TRUE, FALSE, TRUE, TRUE, $sA, 'p-less.xml' ), 'stats compare: two stats runs - the figure "security rules" is one lower in the second, both runs named with their version' );
+$r = $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . $sA );
+eq( status( $r ), 400, 'stats compare: the same run twice is refused' );
+eq( array( status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . basename( $drun ) ) ), status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . str_repeat( 'f', 32 ) ) ),
+        status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare' ) ), status( $bob->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . $sB ) ) ),
+    array( 409, 404, 404, 404 ), 'stats compare: a run that is not a stats run / unknown / missing / without access to the project' );
 eq( array( strpos( $log, 'XPATH: ' ) !== FALSE, (bool)preg_match( '/^\+<ip-netmask>9\.9\.9\.9\/32<\/ip-netmask>/m', $log ) ), array( TRUE, TRUE ), 'diff with set commands: run.log shows the XML differences ( XPATH, + / - ) too' );
 $r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other, 'xpath' => "/config/devices/entry[@name='localhost.localdomain']/device-group", 'noruleordercheck' => TRUE ) );
 eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 2 ) ), array( 202, array( 'noruleordercheck', "filter=/config/devices/entry[@name='localhost.localdomain']/device-group" ) ),
