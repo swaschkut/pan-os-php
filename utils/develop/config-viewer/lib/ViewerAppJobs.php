@@ -375,6 +375,7 @@ trait ViewerAppJobs
                 $this->playbookCheck( json_decode( (string)file_get_contents( $pb['path'] ), TRUE ) );
                 $json = 'json=%FILES%/' . $pb['file'];
             }
+            $meta = array( 'playbook' => isset( $pb ) ? $pb['fid'] : 'predefined:' . $predefined, 'then' => null, 'bp' => null );
             // "then": a second playbook file of the project whose steps run after the first, in the same run (e.g. the
             // stats and the security profile overviews of the result). Both are checked; the run gets one playbook -
             // the first with the steps of the second appended - written into its folder when it is queued (playbook.json)
@@ -382,6 +383,7 @@ trait ViewerAppJobs
             if( $then !== null && $then !== '' )
             {
                 $tf = $this->fileGet( $p, $then, 'playbook' );
+                $meta['then'] = $tf['fid'];
                 $tj = json_decode( (string)file_get_contents( $tf['path'] ), TRUE );
                 $this->playbookCheck( $tj );
                 $fj = json_decode( (string)file_get_contents( isset( $pb ) ? $pb['path'] : $this->playbookDir() . '/' . $predefined ), TRUE );
@@ -422,7 +424,11 @@ trait ViewerAppJobs
         }
         // the BP JSON of the project instead of the one shipped with pan-os-php
         if( isset( $in['bp'] ) )
+        {
             $args[] = 'shadow-bpjsonfile=%FILES%/' . $this->fileGet( $p, $in['bp'], 'bp' )['file'];
+            if( isset( $meta ) )
+                $meta['bp'] = $in['bp'];
+        }
         $open = (int)$this->q( "SELECT COUNT(*) AS c FROM jobs WHERE project_id = ? AND state IN ('queued','running')", array( $p['id'] ) )->fetch()['c'];
         if( $open >= self::JOB_QUEUE_MAX )
             throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
@@ -442,8 +448,8 @@ trait ViewerAppJobs
                 throw new ViewerException( 'the playbook of the run can not be stored', 500 );
             @chmod( $dir . '/playbook.json', 0600 );
         }
-        $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created, image) VALUES (?,?,?,?,?,?,?,?,?)',
-            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time(), ( $image ?? '' ) !== '' ? $image : null ) );
+        $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created, image, meta) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time(), ( $image ?? '' ) !== '' ? $image : null, isset( $meta ) ? json_encode( $meta ) : null ) );
         return $this->jobGet( $user, $pid, $jid );
     }
 

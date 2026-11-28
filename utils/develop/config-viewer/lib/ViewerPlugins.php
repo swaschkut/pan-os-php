@@ -59,7 +59,11 @@ class ViewerPlugins
     const API = 2;
     const APIS = array( 1, 2 );
     /** types of the fields of a form block (interface 2) - ViewerPlugins::fieldValue() checks them */
-    const FIELD_TYPES = array( 'text', 'int', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'select', 'bool', 'list' );
+    const FIELD_TYPES = array( 'text', 'int', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'select', 'bool', 'list', 'file', 'images' );
+    /** kinds of project files a form field of type "file" can name */
+    const FIELD_FILE_KINDS = array( 'playbook', 'bp' );
+    /** the image of the viewer itself in a field of type "images" (the other values are the names of PANOSPHP_VIEWER_CONTAINER_IMAGES) */
+    const IMAGE_VIEWER = '@viewer';
     /** types a list may hold */
     const LIST_ITEMS = array( 'text', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'hostname' );
     const FIELD_KINDS = '/^(text|location|select|multi|secret|image|file:[a-z][a-z0-9-]{0,40})$/';
@@ -291,8 +295,10 @@ class ViewerPlugins
                 throw new Exception( 'project type ' . $type . ', role ' . $role . ': "kind" panos or scm' );
             $roles[$role] = array( 'name' => $role, 'title' => self::text( $r['title'] ?? $role, 'title', 80 ), 'kind' => $r['kind'], 'write' => !empty( $r['write'] ) );
         }
-        if( count( $roles ) < 1 || count( $roles ) > 8 )
-            throw new Exception( 'project type ' . $type . ': 1 to 8 roles' );
+        // no role: a project of this type reads from no device / tenant of its own (e.g. a validation of releases on
+        // uploaded configurations) - it is bound as a project without a type
+        if( count( $roles ) > 8 )
+            throw new Exception( 'project type ' . $type . ': at most 8 roles' );
         return array( 'plugin' => $plugin, 'feature' => $feature, 'type' => $type, 'title' => self::text( $t['title'] ?? $type, 'title', 80 ),
             'text' => self::text( $t['text'] ?? '', 'text', 1000 ), 'roles' => $roles );
     }
@@ -308,14 +314,23 @@ class ViewerPlugins
             if( !is_array( $b ) || !is_string( $b['name'] ?? null ) || !preg_match( '/^[a-z][a-z0-9_-]{0,30}$/', $b['name'] ) || isset( $blocks[$b['name']] ) )
                 throw new Exception( 'page ' . $page . ': a block needs a "name" (lower case, unique)' );
             $kind = $b['kind'] ?? null;
-            if( !in_array( $kind, array( 'form', 'table', 'approval' ), TRUE ) )
-                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form, table or approval' );
-            foreach( array( 'defaults', 'check', 'rows', 'areas' ) as $c )
+            if( !in_array( $kind, array( 'form', 'table', 'approval', 'matrix' ), TRUE ) )
+                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form, table, approval or matrix' );
+            foreach( array( 'defaults', 'check', 'rows', 'areas', 'cells' ) as $c )
                 if( isset( $b[$c] ) && !is_callable( $b[$c] ) )
                     throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "' . $c . '" must be callable' );
             if( $kind === 'table' )
             {
                 $blocks[$b['name']] = self::checkTable( 'page ' . $page . ', block ' . $b['name'], $b );
+                continue;
+            }
+            // a matrix: read only - rows x columns, a state per cell, drawn by the viewer (e.g. configurations x releases)
+            if( $kind === 'matrix' )
+            {
+                if( !isset( $b['cells'] ) )
+                    throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': a matrix needs "cells" (callable)' );
+                $blocks[$b['name']] = array( 'name' => $b['name'], 'kind' => 'matrix', 'title' => self::text( $b['title'] ?? $b['name'], 'title', 120 ),
+                    'text' => self::text( $b['text'] ?? '', 'text', 1000 ), 'fields' => array(), 'cells' => $b['cells'], 'defaults' => null, 'check' => null );
                 continue;
             }
             if( $kind === 'approval' )
@@ -425,6 +440,13 @@ class ViewerPlugins
                 throw new Exception( $where . ': field ' . $f['name'] . ': "max" 1 to 2000' );
             $out['max'] = $max;
         }
+        // a project file of a kind (playbook, bp): the form offers the files of the project, stored is the file id
+        if( $type === 'file' )
+        {
+            if( !in_array( $f['kind'] ?? null, self::FIELD_FILE_KINDS, TRUE ) )
+                throw new Exception( $where . ': field ' . $f['name'] . ': "kind" one of ' . implode( ', ', self::FIELD_FILE_KINDS ) );
+            $out['kind'] = $f['kind'];
+        }
         if( $type === 'list' )
         {
             $item = $f['item'] ?? 'text';
@@ -472,6 +494,24 @@ class ViewerPlugins
                 if( !is_string( $v ) || !isset( $f['options'][$v] ) )
                     throw new Exception( 'not one of the options' );
                 return $v;
+            case 'file':
+                // the id of a project file - that it is one of this project and of the kind is checked by the viewer
+                if( !is_string( $v ) || !preg_match( '/^[0-9a-f]{32}$/', $v ) )
+                    throw new Exception( 'a file of the project' );
+                return $v;
+            case 'images':
+                // names of pan-os-php images of the installation (and @viewer) - that they exist is checked by the viewer
+                if( !is_array( $v ) || count( $v ) > 21 )
+                    throw new Exception( 'a list of images' );
+                $out = array();
+                foreach( $v as $x )
+                    if( !is_string( $x ) || !preg_match( '/^(@viewer|[a-z][a-z0-9-]{0,20})$/', $x ) )
+                        throw new Exception( 'a list of images' );
+                    elseif( !in_array( $x, $out, TRUE ) )
+                        $out[] = $x;
+                if( $f['required'] && count( $out ) === 0 )
+                    throw new Exception( 'is needed' );
+                return $out;
             case 'list':
                 if( !is_array( $v ) || count( $v ) > 500 )
                     throw new Exception( 'a list (at most 500 entries)' );
@@ -768,5 +808,36 @@ class ViewerPluginPage
     public function role( string $role ): ?array
     {
         return ( $this->reader )( 'role', $role );
+    }
+
+    /**
+     * the runs of the project, newest first (at most 1000): jid, type, cid (the version it ran on), image (name; null:
+     * the image of the viewer), state, created, started, finished, error, has_stats, has_result, saved, and for a
+     * playbook run 'playbook' (file id, or "predefined:<name>"), 'then' (file id), 'bp' (file id) - null when not set
+     */
+    public function runs(): array
+    {
+        return (array)( $this->reader )( 'runs' );
+    }
+
+    /**
+     * the versions of the project, newest first: cid, name, note, created, size, from_run (the run whose result it is;
+     * null: uploaded / imported / changed in the viewer)
+     */
+    public function versions(): array
+    {
+        return (array)( $this->reader )( 'versions' );
+    }
+
+    /** the project files: fid, kind, name, size, created */
+    public function files(): array
+    {
+        return (array)( $this->reader )( 'files' );
+    }
+
+    /** the names of the pan-os-php images of the installation a run can use (PANOSPHP_VIEWER_CONTAINER_IMAGES); the image of the viewer is "@viewer" */
+    public function images(): array
+    {
+        return (array)( $this->reader )( 'images' );
     }
 }

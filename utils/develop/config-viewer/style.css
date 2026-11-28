@@ -51,6 +51,9 @@ pre.log { max-height: 240px; overflow: auto; background: var(--bg); border: 1px 
 .token { width: 100%; font-family: monospace; }
 .filelink { display: inline-block; margin: 2px 14px 2px 0; }
 .filelink .filedl { margin-left: 6px; font-size: 12px; }
+/* matrix of a plug-in: the files of the run of a cell below its state */
+table.matrix td { white-space: normal; max-width: 260px; }
+.matrixfiles a { display: inline-block; margin: 3px 8px 0 0; font-size: 12px; }
 /* stats compare: what exists in one run only, folded */
 details.statsonly { margin-top: 10px; }
 details.statsonly summary { cursor: pointer; color: var(--accent); }

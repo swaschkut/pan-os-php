@@ -87,6 +87,9 @@ trait ViewerAppPluginPages
                     $this->pluginRowsDepth--;
                 }
             }
+            // runs, versions, files of the project and the images of the installation (read only)
+            if( in_array( $what, array( 'runs', 'versions', 'files', 'images' ), TRUE ) && count( $args ) === 0 )
+                return $this->pluginProjectData( $p, $what );
             $roles = self::rolesOf( $p );
             if( $what === 'role' && count( $args ) === 1 )
                 return $roles[$args[0]] ?? null;
@@ -118,6 +121,96 @@ trait ViewerAppPluginPages
             return is_array( $j ) ? ( $j['data'] ?? null ) : null;
         };
         return $reader;
+    }
+
+    /** what a page of a plug-in reads of the project: its runs, versions, files; the images of the installation */
+    private function pluginProjectData( array $p, string $what ): array
+    {
+        if( $what === 'images' )
+            return array_merge( array( ViewerPlugins::IMAGE_VIEWER ), $this->runImages() );
+        if( $what === 'files' )
+            return array_map( function( $f ) { return array( 'fid' => $f['fid'], 'kind' => $f['kind'], 'name' => $f['name'], 'size' => (int)$f['size'], 'created' => (int)$f['created'] ); },
+                $this->q( 'SELECT fid, kind, name, size, created FROM files WHERE project_id = ? ORDER BY id DESC', array( $p['id'] ) )->fetchAll() );
+        if( $what === 'versions' )
+        {
+            $out = array();
+            foreach( $this->q( 'SELECT * FROM configs WHERE project_id = ? ORDER BY id DESC', array( $p['id'] ) )->fetchAll() as $c )
+            {
+                $from = $c['from_run'] ?? null;
+                // versions made before from_run existed: the run named in the note ("<type> run <8 hex>…")
+                if( $from === null && preg_match( '/^[a-z0-9-]+ run ([0-9a-f]{8})(,|$)/', (string)$c['note'], $m ) )
+                {
+                    $j = $this->q( 'SELECT jid FROM jobs WHERE project_id = ? AND jid LIKE ?', array( $p['id'], $m[1] . '%' ) )->fetch();
+                    $from = $j ? $j['jid'] : substr( $m[1], 0, 8 );
+                }
+                $out[] = array( 'cid' => $c['cid'], 'name' => $c['name'], 'note' => (string)$c['note'], 'created' => (int)$c['created'], 'size' => (int)$c['size'], 'from_run' => $from );
+            }
+            return $out;
+        }
+        $out = array();
+        foreach( $this->q( 'SELECT j.*, c.cid FROM jobs j LEFT JOIN configs c ON c.id = j.config_id WHERE j.project_id = ? ORDER BY j.id DESC LIMIT 1000', array( $p['id'] ) )->fetchAll() as $j )
+        {
+            $meta = json_decode( (string)( $j['meta'] ?? '' ), TRUE );
+            $out[] = array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'image' => $j['image'] ?? null, 'state' => $j['state'],
+                'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null, 'finished' => $j['finished'] !== null ? (int)$j['finished'] : null,
+                'error' => $j['error'], 'playbook' => $meta['playbook'] ?? null, 'then' => $meta['then'] ?? null, 'bp' => $meta['bp'] ?? null ) + $this->jobHas( $p, $j );
+        }
+        return $out;
+    }
+
+    /** states of a cell of a matrix block */
+    const MATRIX_STATES = array( 'none', 'ok', 'warn', 'fail', 'running', 'old' );
+
+    /**
+     * a matrix block for the page, from cells() of the plug-in: columns, rows, cells (state, text, title, run, files) -
+     * checked: plain text, a run of this project, plain file names
+     */
+    private function matrixBlockPublic( array $p, array $b, ViewerPluginPage $view ): array
+    {
+        $out = array( 'name' => $b['name'], 'kind' => 'matrix', 'title' => $b['title'], 'text' => $b['text'], 'columns' => array(), 'rows' => array(), 'error' => null );
+        try
+        {
+            $m = ( $b['cells'] )( $view );
+            if( !is_array( $m ) )
+                throw new Exception( 'cells: an array with columns, rows, cells' );
+            $txt = function( $v, int $max ) { return is_scalar( $v ) ? substr( preg_replace( '/[\x00-\x1f]/', ' ', (string)$v ), 0, $max ) : ''; };
+            $key = function( $v ) { if( !is_scalar( $v ) || (string)$v === '' || strlen( (string)$v ) > 200 ) throw new Exception( 'a key: text of 1 to 200 characters' ); return (string)$v; };
+            $jids = array_flip( array_column( $this->pluginProjectData( $p, 'runs' ), 'jid' ) );
+            foreach( (array)( $m['columns'] ?? array() ) as $c )
+                $out['columns'][] = array( 'key' => $key( $c['key'] ?? null ), 'label' => $txt( $c['label'] ?? $c['key'], 80 ), 'title' => $txt( $c['title'] ?? '', 300 ) );
+            if( count( $out['columns'] ) > 30 )
+                throw new Exception( 'at most 30 columns' );
+            $cols = array_column( $out['columns'], 'key' );
+            foreach( (array)( $m['rows'] ?? array() ) as $r )
+            {
+                $row = array( 'key' => $key( $r['key'] ?? null ), 'label' => $txt( $r['label'] ?? $r['key'], 200 ), 'sub' => $txt( $r['sub'] ?? '', 300 ), 'cells' => array() );
+                foreach( $cols as $ck )
+                {
+                    $c = $m['cells'][$row['key']][$ck] ?? null;
+                    if( !is_array( $c ) )
+                    {
+                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'run' => null, 'files' => array() );
+                        continue;
+                    }
+                    $state = in_array( $c['state'] ?? 'none', self::MATRIX_STATES, TRUE ) ? $c['state'] ?? 'none' : 'none';
+                    $run = isset( $c['run'] ) && is_string( $c['run'] ) && isset( $jids[$c['run']] ) ? $c['run'] : null;
+                    $files = array();
+                    foreach( (array)( $c['files'] ?? array() ) as $f )
+                        if( $run !== null && is_string( $f ) && preg_match( '#^[A-Za-z0-9][A-Za-z0-9._-]{0,80}(/[A-Za-z0-9][A-Za-z0-9._-]{0,80})?$#', $f ) && count( $files ) < 10 )
+                            $files[] = $f;
+                    $row['cells'][] = array( 'state' => $state, 'text' => $txt( $c['text'] ?? '', 200 ), 'title' => $txt( $c['title'] ?? '', 1000 ), 'run' => $run, 'files' => $files );
+                }
+                $out['rows'][] = $row;
+                if( count( $out['rows'] ) > 2000 )
+                    throw new Exception( 'at most 2000 rows' );
+            }
+        }
+        catch( Throwable $e )
+        {
+            $out['columns'] = array(); $out['rows'] = array();
+            $out['error'] = 'cells of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+        }
+        return $out;
     }
 
     /** the rows of a table block from the plug-in: key => row (known columns, scalar values / lists of them) */
@@ -311,6 +404,8 @@ trait ViewerAppPluginPages
             return $this->approvalBlockPublic( $p, $b, $stored, $view );
         if( $b['kind'] === 'table' )
             return $this->tableBlockPublic( $b, $stored, $view );
+        if( $b['kind'] === 'matrix' )
+            return $this->matrixBlockPublic( $p, $b, $view );
         $defaults = array();
         $error = null;
         if( $b['defaults'] !== null )
@@ -334,6 +429,24 @@ trait ViewerAppPluginPages
             }
         }
         $fields = array_values( $b['fields'] );
+        // the choices of a field "file" (the files of the project of its kind) and "images" (the images of the installation)
+        foreach( $fields as $i => $f )
+        {
+            if( $f['type'] === 'file' && $p !== null )
+            {
+                $fields[$i]['options'] = array();
+                foreach( $this->pluginProjectData( $p, 'files' ) as $x )
+                    if( $x['kind'] === $f['kind'] )
+                        $fields[$i]['options'][$x['fid']] = $x['name'];
+                $fields[$i]['options'] = (object)$fields[$i]['options'];
+            }
+            if( $f['type'] === 'images' )
+            {
+                $fields[$i]['options'] = array( ViewerPlugins::IMAGE_VIEWER => 'the image of the viewer' );
+                foreach( $this->runImages() as $n )
+                    $fields[$i]['options'][$n] = $n;
+            }
+        }
         return array( 'name' => $b['name'], 'kind' => $b['kind'], 'title' => $b['title'], 'text' => $b['text'], 'fields' => $fields,
             'values' => (object)$stored['values'], 'saved_by' => $stored['saved_by'], 'saved_at' => $stored['saved_at'], 'defaults' => (object)$defaults,
             'error' => $error );
@@ -373,6 +486,8 @@ trait ViewerAppPluginPages
             return $this->tableSave( $user, $p, $key, $pg, $b, $in );
         if( $b['kind'] === 'approval' )
             return $this->approvalSave( $user, $p, $key, $pg, $b, $in );
+        if( $b['kind'] === 'matrix' )
+            throw new ViewerException( 'a matrix is read only', 405 );
         $raw = $in['values'] ?? null;
         if( !is_array( $raw ) )
             throw new ViewerException( 'values: an object field => value expected', 400 );
@@ -390,6 +505,18 @@ trait ViewerAppPluginPages
             {
                 $errors[$name] = $e->getMessage();
             }
+        foreach( $b['fields'] as $name => $f )
+        {
+            if( isset( $errors[$name] ) || ( $values[$name] ?? null ) === null )
+                continue;
+            if( $f['type'] === 'file' )
+                try { $this->fileGet( $p, $values[$name], $f['kind'] ); }
+                catch( ViewerException $e ) { $errors[$name] = 'not a ' . ( $f['kind'] === 'bp' ? 'BP JSON' : $f['kind'] ) . ' file of this project'; }
+            if( $f['type'] === 'images' )
+                foreach( $values[$name] as $n )
+                    if( $n !== ViewerPlugins::IMAGE_VIEWER && !in_array( $n, $this->runImages(), TRUE ) )
+                        $errors[$name] = 'not an image of this installation: ' . $n;
+        }
         $stored = $this->pluginPageStored( $p, $key, $pg );
         if( count( $errors ) === 0 && $b['check'] !== null )
         {

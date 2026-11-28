@@ -331,6 +331,9 @@ class ViewerApp
         // the image a run asked for by name (a run type of a plug-in with a field of kind "image"); NULL: the image of the viewer
         if( !in_array( 'image', array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' ), TRUE ) )
             $this->db->exec( 'ALTER TABLE jobs ADD COLUMN image TEXT' );
+        // what a run was started with, for the pages of plug-ins (JSON; a playbook run: playbook, then, bp - file ids)
+        if( !in_array( 'meta', array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' ), TRUE ) )
+            $this->db->exec( 'ALTER TABLE jobs ADD COLUMN meta TEXT' );
         // command line use an administrator has seen (shown once after the login: cliNotices)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(users)' )->fetchAll(), 'name' );
         if( !in_array( 'cli_seen', $cols, TRUE ) )

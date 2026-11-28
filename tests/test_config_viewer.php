@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr', 'sec', 'img', 'badimg' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr', 'sec', 'img', 'badimg', 'mx' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -75,6 +75,35 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
             'shadow-ignoreinvalidaddressobjects', '#kinds=' . implode( '+', \$run->choices( 'kinds' ) ) ); } ) ) );" );
 
 // interface 2: a page with form blocks - defaults from the SCM tab (newest state), check of the plug-in (no overlap)
+// a page with a matrix (read only) that reads runs, versions, files and images of the project; a project type without
+// roles; form fields "file" (a project file of a kind) and "images" (images of the installation)
+file_put_contents( $plugins . '/mx/plugin.php', <<<'MX'
+<?php return array( 'api' => 2, 'name' => 'mx', 'title' => 'Matrix',
+    'projectTypes' => array( 'check' => array( 'title' => 'Check without devices', 'roles' => array() ) ),
+    'pages' => array( 'overview' => array( 'title' => 'Overview', 'blocks' => array(
+        array( 'name' => 'settings', 'kind' => 'form', 'title' => 'Settings', 'fields' => array(
+            array( 'name' => 'playbook', 'type' => 'file', 'kind' => 'playbook', 'label' => 'Playbook', 'required' => TRUE ),
+            array( 'name' => 'then', 'type' => 'file', 'kind' => 'playbook', 'label' => 'Then' ),
+            array( 'name' => 'bp', 'type' => 'file', 'kind' => 'bp', 'label' => 'BP JSON' ),
+            array( 'name' => 'images', 'type' => 'images', 'label' => 'Images', 'required' => TRUE ) ) ),
+        array( 'name' => 'grid', 'kind' => 'matrix', 'title' => 'Runs', 'cells' => function( ViewerPluginPage $page ) {
+            $s = $page->values( 'settings' );
+            $out = array( 'columns' => array(), 'rows' => array(), 'cells' => array() );
+            foreach( (array)( $s['images'] ?? array() ) as $i )
+                $out['columns'][] = array( 'key' => $i, 'label' => $i === '@viewer' ? 'viewer' : $i );
+            foreach( $page->versions() as $v )
+                if( $v['from_run'] === null )
+                    $out['rows'][] = array( 'key' => $v['cid'], 'label' => $v['name'], 'sub' => $v['note'] );
+            foreach( array_reverse( $page->runs() ) as $r )
+                if( $r['type'] === 'playbook' && $r['playbook'] === ( $s['playbook'] ?? null ) && $r['then'] === ( $s['then'] ?? null ) && $r['bp'] === ( $s['bp'] ?? null ) )
+                    $out['cells'][$r['cid']][$r['image'] ?? '@viewer'] = array( 'state' => $r['state'] === 'done' ? 'ok' : ( $r['state'] === 'failed' ? 'fail' : 'running' ),
+                        'text' => $r['state'], 'run' => $r['jid'], 'files' => array( 'run.log', '../x', 'json/debugAPI_string.json' ) );
+            $out['cells']['injected'] = array( 'x' => array( 'state' => 'ok', 'run' => str_repeat( 'f', 32 ) ) );
+            return $out;
+        } ),
+        array( 'name' => 'broken', 'kind' => 'matrix', 'title' => 'Broken', 'cells' => function( ViewerPluginPage $page ) { throw new Exception( 'plug-in failure' ); } ) ) ) ) );
+MX
+);
 file_put_contents( $plugins . '/pg/plugin.php', "<?php return array( 'api' => 2, 'name' => 'pg', 'title' => 'Pages',
     'projectTypes' => array( 'tmig' => array( 'title' => 'Tenant migration', 'roles' => array(
         'source' => array( 'title' => 'Tenant A', 'kind' => 'scm' ), 'target' => array( 'title' => 'Tenant B', 'kind' => 'scm', 'write' => TRUE ) ) ) ),
@@ -1190,7 +1219,7 @@ $tmAfter = array_column( $alice->call( 'GET', $TM )[1]['type']['roles'] ?? array
 $alice->call( 'DELETE', $TM . '/members/bob' );
 eq( array( array_keys( $tmMeta['projectTypes'] ?? array() ), array_column( $tmMeta['projectTypes']['pg-tmig']['roles'] ?? array(), 'name' ), $tmMeta['pages']['pg-mig']['types'] ?? null,
         $tmNoType, $tmBob, $tmBad, status( $tmSet ), $tmSet[1]['type']['key'] ?? null, array_column( $tmSet[1]['type']['roles'] ?? array(), 'target' ), status( $tmPage ), $tmOther ),
-    array( array( 'pg-tmig' ), array( 'source', 'target' ), array( 'pg-tmig' ), 404, 403, 400, 200, 'pg-tmig', array( null, null ), 200, 404 ),
+    array( array( 'mx-check', 'pg-tmig' ), array( 'source', 'target' ), array( 'pg-tmig' ), 404, 403, 400, 200, 'pg-tmig', array( null, null ), 200, 404 ),
     'project type: in meta; set by the owner (not by a write member, only a known type); its page only in such a project' );
 eq( array( $b1, $b2, $b3 ),
     array( array( 'refused: role: this project has the rol', 'source', 'refused: the role source is for an SCM ', 'refused: role: one of source, target' ),
@@ -1908,6 +1937,37 @@ eq( array( status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $
         status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0] ) ) ), status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[1], 'run2' => $tr[0] ) ) ),
         status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0], 'run2' => '../../' . $tr[1] ) ) ) ),
     array( 400, 409, 404, 400, 404 ), 'diff of two run results: the same run twice / a run without a result configuration / one run missing / the version of the request is not the one of run1 / not a run id' );
+// a page of a plug-in reads runs, versions, files, images; form fields "file" and "images"; a matrix
+$MX = $PB . '/pages/mx-overview';
+$bad = $alice->call( 'PUT', $MX . '/blocks/settings', array( 'values' => array( 'playbook' => $bpFid, 'then' => str_repeat( 'a', 32 ), 'bp' => $visFid, 'images' => array( '@viewer', 'alpha' ) ) ) );
+eq( array( status( $bad ), array_keys( (array)( $bad[1]['fields'] ?? array() ) ) ), array( 400, array( 'playbook', 'then', 'bp', 'images' ) ),
+    'plug-in page: field "file" - a file of another kind / unknown is refused; field "images" - an image the installation does not have is refused' );
+$r = $alice->call( 'PUT', $MX . '/blocks/settings', array( 'values' => array( 'playbook' => $visFid, 'then' => $after, 'bp' => $bpFid, 'images' => array( '@viewer', 'beta', 'beta' ) ) ) );
+eq( array( status( $r ), $r[1]['values']['images'] ?? null ), array( 200, array( '@viewer', 'beta' ) ), 'plug-in page: settings saved (images once each)' );
+$rb = $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $visFid, 'then' => $after, 'bp' => $bpFid, 'image' => 'beta' ) );
+waitRun( $alice, $PB . '/runs/' . ( $rb[1]['jid'] ?? '' ) );
+$pgm = $alice->call( 'GET', $MX );
+$blk = array_column( $pgm[1]['blocks'] ?? array(), null, 'name' );
+$opt = array_column( $blk['settings']['fields'] ?? array(), 'options', 'name' );
+$grid = $blk['grid'] ?? array();
+$rowOf = array_column( $grid['rows'] ?? array(), null, 'key' );
+$c0 = $rowOf[basename( $PBC )]['cells'] ?? array();
+$c1 = $rowOf[$more]['cells'] ?? array();
+eq( array( isset( $opt['playbook'][$visFid] ), isset( $opt['playbook'][$bpFid] ), isset( $opt['bp'][$bpFid] ), array_keys( (array)( $opt['images'] ?? array() ) ) ),
+    array( TRUE, FALSE, TRUE, array( '@viewer', 'beta', 'main' ) ), 'plug-in page: a field "file" offers the files of its kind, "images" the images of the installation and the one of the viewer' );
+eq( array( array_column( $grid['columns'] ?? array(), 'key' ), isset( $rowOf['injected'] ), count( $grid['rows'] ?? array() ) >= 2,
+        $c0[0]['state'] ?? null, $c0[0]['run'] ?? null, $c0[0]['files'] ?? null, $c1[0]['run'] ?? null, $c0[1]['state'] ?? null, $c0[1]['run'] ?? null ),
+    array( array( '@viewer', 'beta' ), FALSE, TRUE, 'ok', $tr[0], array( 'run.log', 'json/debugAPI_string.json' ), $tr[1], 'fail', $rb[1]['jid'] ?? 'x' ),
+    'plug-in matrix: rows = uploaded versions, columns = images, a cell = the newest run of the settings (run of this project, plain file names; a row the plug-in did not list is not shown)' );
+eq( array( $blk['broken']['error'] ?? null, $blk['broken']['rows'] ?? null, status( $alice->call( 'PUT', $MX . '/blocks/grid', array( 'values' => array() ) ) ) ),
+    array( 'cells of the plug-in: plug-in failure', array(), 405 ), 'plug-in matrix: an error of the plug-in is shown in its block; a matrix can not be saved' );
+// a project type without roles: set like any other, no binding needed
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Check project' ) );
+$CK = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'PUT', $CK . '/type', array( 'type' => 'mx-check' ) );
+eq( array( status( $r ), $r[1]['type']['key'] ?? null, $r[1]['type']['roles'] ?? null, status( $alice->call( 'GET', $CK . '/pages/mx-overview' ) ) ), array( 200, 'mx-check', array(), 200 ),
+    'project type without roles: set by the owner, no roles' );
+$alice->call( 'DELETE', $CK );
 eq( array( strpos( $log, 'XPATH: ' ) !== FALSE, (bool)preg_match( '/^\+<ip-netmask>9\.9\.9\.9\/32<\/ip-netmask>/m', $log ) ), array( TRUE, TRUE ), 'diff with set commands: run.log shows the XML differences ( XPATH, + / - ) too' );
 $r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other, 'xpath' => "/config/devices/entry[@name='localhost.localdomain']/device-group", 'noruleordercheck' => TRUE ) );
 eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 2 ) ), array( 202, array( 'noruleordercheck', "filter=/config/devices/entry[@name='localhost.localdomain']/device-group" ) ),

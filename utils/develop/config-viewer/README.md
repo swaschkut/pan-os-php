@@ -614,6 +614,29 @@ them from the description - a plug-in brings no script for the page. Plug-ins of
 | `ipv4`, `ipv4-cidr` (network address), `ipv6-cidr` (network address, short form) | string |
 | `select` (`options` value => label), `bool` | string / true, false |
 | `list` (`item`: text, ipv4, ipv4-cidr, ipv6-cidr, hostname; at most 500) | list of strings |
+| `file` (`kind`: playbook, bp) - a project file of that kind; the form offers the files of the project | file id |
+| `images` - pan-os-php images of the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`) and `@viewer` (the image of the viewer) | list of names |
+
+**Matrix blocks** - read only: rows x columns, a state per cell, drawn by the viewer (e.g. configurations x pan-os-php
+images of a release validation):
+
+```php
+array( 'name' => 'grid', 'kind' => 'matrix', 'title' => 'Runs', 'cells' => function( ViewerPluginPage $page ) {
+    return array( 'columns' => array( array( 'key' => '@viewer', 'label' => 'alpha' ) ),
+        'rows' => array( array( 'key' => '<cid>', 'label' => 'fw.xml', 'sub' => 'upload' ) ),
+        'cells' => array( '<cid>' => array( '@viewer' => array( 'state' => 'ok', 'text' => 'done', 'title' => '…',
+            'run' => '<jid>', 'files' => array( 'run.log', 'json/debugAPI_string.json' ) ) ) ) );
+} ),
+```
+
+`state`: none, ok, warn, fail, running, old. `run` must be a run of the project, `files` plain names of its result files
+(they open in a tab); at most 30 columns, 2000 rows. A row or column the plug-in does not list is not shown.
+
+**What a page reads of the project** (`ViewerPluginPage`, read only): `runs()` - newest first, at most 1000: jid, type,
+cid (the version), image (name; null: the image of the viewer), state, created / started / finished, error, has_stats,
+has_result, saved, and for a playbook run `playbook` (file id or `predefined:<name>`), `then`, `bp` (file ids);
+`versions()` - cid, name, note, created, size, from_run (the run whose result it is; null: uploaded / imported);
+`files()` - fid, kind, name, size, created; `images()` - `@viewer` and the names of the installation.
 
 **Table blocks** - rows of the plug-in (e.g. every MU IP pool, every tunnel), some columns editable; stored are the
 changes per row, the value of the plug-in stays visible below a changed cell:
@@ -669,6 +692,8 @@ target SCM tenant in one project); pages can belong to project types:
 'pages' => array( 'settings' => array( 'projectTypes' => array( 'tenant-migration' ), 'blocks' => … ) ),
 ```
 
+* A project type can have no roles (`'roles' => array()`): its projects read from no device / tenant of their own (e.g.
+  a release validation on uploaded configurations) and are bound as a project without a type.
 * The owner sets the type (`PUT …/projects/<pid>/type {type: <plugin>-<type> | null}`, in the page: project header)
   while the project has read nothing from a device / tenant yet; it stays once a role is bound.
 * Import, SCM tab read live and egress IPs take the role bound to the tenant / device of the key; a free role is

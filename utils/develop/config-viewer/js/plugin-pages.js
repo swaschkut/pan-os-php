@@ -15,6 +15,7 @@ function pluginPageCard(base, key, meta) {
         const pg = await api('GET', base + '/pages/' + key);
         body.replaceChildren(pg.text ? el('p', { class: 'muted', text: pg.text }) : '',
             ...pg.blocks.map(b => b.kind === 'table' ? pluginTableBlock(base, key, b, pg.write, load)
+                : b.kind === 'matrix' ? pluginMatrixBlock(base, b)
                 : b.kind === 'approval' ? pluginApprovalBlock(base, key, b, pg.write, load) : pluginFormBlock(base, key, b, pg.write, load)));
     });
     load();
@@ -57,9 +58,15 @@ function pluginFormBlock(base, key, b, canWrite, reload) {
 // an input for a value of a field (form) or a cell (table); list: one entry per line (form) / separated by , (table)
 function pluginInput(f, v, inTable) {
     let input;
-    if (f.type === 'select') {
-        input = el('select', {}, f.required ? null : el('option', { value: '', text: '-' }),
-            Object.entries(f.options).map(([o, label]) => { const x = el('option', { value: o, text: label }); x.selected = o === v; return x; }));
+    if (f.type === 'select' || f.type === 'file') {
+        // file: a project file of a kind (the options are the files of the project) - upload one under "Project files"
+        input = el('select', {}, f.required && f.type === 'select' ? null : el('option', { value: '', text: f.type === 'file' ? '- choose a file -' : '-' }),
+            Object.entries(f.options || {}).map(([o, label]) => { const x = el('option', { value: o, text: label }); x.selected = o === v; return x; }));
+    } else if (f.type === 'images') {
+        // pan-os-php images of the installation (VIEWER_RUN_IMAGES) and the one of the viewer: one or more
+        const opts = Object.entries(f.options || {});
+        input = el('select', { multiple: true, size: Math.min(8, Math.max(2, opts.length)) },
+            opts.map(([o, label]) => { const x = el('option', { value: o, text: label }); x.selected = Array.isArray(v) && v.includes(o); return x; }));
     } else if (f.type === 'bool') {
         input = el('input', { type: 'checkbox' }); input.checked = v === true;
     } else if (f.type === 'list' && !inTable) {
@@ -70,6 +77,7 @@ function pluginInput(f, v, inTable) {
         input.value = v === null || v === undefined ? '' : Array.isArray(v) ? v.join(', ') : String(v);
     }
     input.valueOf2 = () => f.type === 'bool' ? input.checked
+        : f.type === 'images' ? [...input.selectedOptions].map(o => o.value)
         : f.type === 'list' ? input.value.split(inTable ? ',' : '\n').map(x => x.trim()).filter(x => x !== '') : input.value;
     return input;
 }
@@ -161,4 +169,21 @@ function pluginTableBlock(base, key, b, canWrite, reload) {
         el('div', { class: 'scmscroll' }, el('table', { class: 'ptable' }, el('thead', {}, head), body)), formErr,
         el('div', { class: 'row' }, canWrite && b.rows.length ? el('button', { class: 'primary', type: 'button', text: 'Save', onclick: save }) : null,
             el('span', { class: 'muted', text: b.saved_at ? 'changes saved by ' + (b.saved_by || '?') + ', ' + fmtTime(b.saved_at) : 'no changes yet - the values are the ones of the plug-in' })));
+}
+
+// a matrix of a plug-in (read only): rows x columns, a state per cell - e.g. configurations x pan-os-php images. A cell can
+// name a run of the project: its files open in a tab (js/run-file.js)
+const PLUGIN_MATRIX_BADGE = { ok: 'badge ok', fail: 'badge warn', warn: 'badge dirty', old: 'badge dirty', running: 'badge', none: '' };
+function pluginMatrixBlock(base, b) {
+    const pid = decodeURIComponent(base.split('/')[1]);
+    const cell = c => el('td', { title: c.title || null },
+        c.state === 'none' && !c.text ? el('span', { class: 'muted', text: '-' }) : el('span', { class: PLUGIN_MATRIX_BADGE[c.state] || 'badge', text: c.text || c.state }),
+        c.run && c.files.length ? el('div', { class: 'matrixfiles' }, c.files.map(f => el('a', { href: runFileLink(pid, c.run, f), target: '_blank', rel: 'noopener', title: 'open ' + f + ' in a new tab', text: f.split('/').pop() }))) : null);
+    return el('div', { class: 'pblock' }, el('h3', { text: b.title }), b.text ? el('p', { class: 'muted', text: b.text }) : null,
+        b.error ? el('div', { class: 'fielderror', text: b.error }) : null,
+        b.rows.length === 0 ? (b.error ? null : el('p', { class: 'muted', text: 'nothing to show yet' })) :
+        el('div', { class: 'tablewrap' }, el('table', { class: 'plain matrix' },
+            el('thead', {}, el('tr', {}, el('th', { text: '' }), b.columns.map(c => el('th', { text: c.label, title: c.title || null })))),
+            el('tbody', {}, b.rows.map(r => el('tr', {}, el('td', { class: 'wrap' }, el('b', { text: r.label }), r.sub ? el('div', { class: 'muted', text: r.sub }) : null),
+                r.cells.map(cell)))))));
 }
