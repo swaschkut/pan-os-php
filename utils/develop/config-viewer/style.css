@@ -44,6 +44,13 @@ pre.log { max-height: 240px; overflow: auto; background: var(--bg); border: 1px 
 
 .token { width: 100%; font-family: monospace; }
 .filelink { display: inline-block; margin: 2px 14px 2px 0; }
+.filelink .filedl { margin-left: 6px; font-size: 12px; }
+/* a result file of a run shown in the page: line numbers and text scroll together */
+.fileview { display: flex; align-items: flex-start; overflow: auto; max-height: calc(100vh - 230px); border: 1px solid var(--line); border-radius: 6px; background: #fff; font-size: 12px; }
+.fileview pre { margin: 0; padding: 8px 10px; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
+.fileview .filenumbers { position: sticky; left: 0; flex: 0 0 auto; text-align: right; color: var(--muted); background: var(--bg); border-right: 1px solid var(--line); user-select: none; }
+.fileview .filetext { flex: 1 1 auto; }
+.fileview.wrap .filetext { white-space: pre-wrap; word-break: break-word; }
 td.wrap { white-space: normal; overflow-wrap: anywhere; }
 
 textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; }

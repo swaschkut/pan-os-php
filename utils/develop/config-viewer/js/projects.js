@@ -266,7 +266,10 @@ async function showProject(pid) {
     // ---- runs (jobs): stats, playbook
     let runsCard = null;
     if (!limited) {
-        const rVersion = el('select', { required: true }, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
+        // a version in a list: name, time and its note - results of runs have the same name as the version they come
+        // from, the note says which run (and which pan-os-php image) made them
+        const versionText = c => c.name + ' - ' + fmtTime(c.created) + (c.note ? ' - ' + (c.note.length > 70 ? c.note.slice(0, 69) + '…' : c.note) : '');
+        const rVersion = el('select', { required: true }, configs.configs.map(c => el('option', { value: c.cid, text: versionText(c), title: c.note || null })));
         const rType = el('select', {}, el('option', { value: 'stats', text: 'stats (BPA figures)' }), el('option', { value: 'playbook', text: 'playbook' }),
             el('option', { value: 'diff', text: 'diff (compare two versions)' }),
             canWrite ? el('option', { value: 'psk-list', text: 'IKE gateways / PSK list' }) : null,
@@ -287,7 +290,7 @@ async function showProject(pid) {
                 field('Memory use in run.log (debugmemory)', oDbg), field('Remove stage files (removestagefiles)', oRm)),
             el('p', { class: 'muted', text: 'subprocess: every step runs as its own PHP process, its memory is free again afterwards - slower, needs least memory. memorythreshold: only steps that start while the run uses more than this many MB run as their own process. The memory a run may use at all is set by the administrator of the computer (VIEWER_RUN_MEMORY).' }));
         // diff: this version (file1, the original) against another one (file2); set commands from file1 to file2
-        const dOther = el('select', {}, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
+        const dOther = el('select', {}, configs.configs.map(c => el('option', { value: c.cid, text: versionText(c), title: c.note || null })));
         if (configs.configs.length > 1) dOther.value = configs.configs[0].cid;
         if (configs.configs.length > 1) rVersion.value = configs.configs[1].cid;
         const dSet = el('input', { type: 'checkbox', checked: true }), dOrder = el('input', { type: 'checkbox' });
@@ -397,8 +400,12 @@ async function showProject(pid) {
                             onclick: (ev) => { if (!confirm(f.name + ' can be downloaded ONCE - it is removed afterwards. Keep it safe. Download now?')) { ev.preventDefault(); return; } setTimeout(() => refreshRuns(), 1500); } }),
                             el('span', { class: 'muted', text: ' ' + fmtSize(f.size) + ', until ' + fmtTime(f.expires) })))) : null;
                     return [row, el('tr', {}, el('td', { colspan: 7, class: 'wrap' }, sens, fl.length === 0 ? el('span', { class: 'muted', text: 'no files' }) :
-                        fl.map(f => el('span', { class: 'filelink' }, el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/' + f.name.split('/').map(encodeURIComponent).join('/'), text: f.name }),
-                            el('span', { class: 'muted', text: ' ' + fmtSize(f.size) }))))) ];
+                        // a text file opens in a tab of its own (js/run-file.js), with its download next to it; other files download
+                        fl.map(f => { const dl = API + '/' + base + '/runs/' + r.jid + '/files/' + f.name.split('/').map(encodeURIComponent).join('/');
+                            return el('span', { class: 'filelink' },
+                                runFileIsText(f.name) ? el('a', { href: runFileLink(pid, r.jid, f.name), target: '_blank', rel: 'noopener', title: 'show the file in a new tab', text: f.name }) : el('a', { href: dl, text: f.name }),
+                                el('span', { class: 'muted', text: ' ' + fmtSize(f.size) }),
+                                runFileIsText(f.name) ? el('a', { class: 'filedl', href: dl, title: 'download ' + f.name, text: 'download' }) : null); }))) ];
                 })));
             return runs.some(r => r.state === 'queued' || r.state === 'running');
         }

@@ -405,6 +405,10 @@ $r = waitRun( $P . '/runs/' . $jidP );
 $c = array_values( array_filter( calls(), function( $c ) use ( $jidP ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidP, $c, TRUE ); } ) )[0] ?? array();
 eq( array( $r[1]['state'] ?? null, in_array( 'example.test/pan-os-php:beta', $c, TRUE ), in_array( 'out.xml', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( 'done', TRUE, TRUE ),
     'built-in playbook run with another image: started with that image, result configuration in the folder of the run' );
+// the result as a new version: its note names the image - two results of the same playbook can be told apart
+$r = call( 'POST', $P . '/runs/' . $jidP . '/save' );
+$noteBeta = current( array_filter( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), function( $x ) use ( $r ) { return $x['cid'] === ( $r[1]['cid'] ?? '' ); } ) )['note'] ?? null;
+eq( array( $r[0], $noteBeta ), array( 201, 'playbook run ' . substr( $jidP, 0, 8 ) . ', image beta' ), 'result as new version: the note names the run and the image' );
 $r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'bp' => $bp ) );
 $jid2 = $r[1]['jid'] ?? '';
 $r = waitRun( $P . '/runs/' . $jid2 );
@@ -415,7 +419,10 @@ $c = array_values( array_filter( calls(), function( $c ) use ( $jid2 ) { return 
 $tail = array_slice( $c, (int)array_search( 'pan-os-php:test', $c, TRUE ) + 1 );
 eq( count( preg_grep( '#=/project/files/[0-9a-f]{32}\.json$#', $tail ) ), 2, 'playbook run: playbook and BP JSON from /project/files (' . implode( ' ', $tail ) . ')' );
 eq( count( preg_grep( '#=/job/#', $tail ) ) >= 1, TRUE, 'playbook run: result goes to /job' );
-eq( call( 'POST', $P . '/runs/' . $jid2 . '/save' )[0], 201, 'playbook run: result taken as a new version' );
+$r2 = call( 'POST', $P . '/runs/' . $jid2 . '/save' );
+eq( $r2[0], 201, 'playbook run: result taken as a new version' );
+$noteViewer = current( array_filter( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), function( $x ) use ( $r2 ) { return $x['cid'] === ( $r2[1]['cid'] ?? '' ); } ) )['note'] ?? null;
+eq( $noteViewer, 'playbook run ' . substr( $jid2, 0, 8 ) . ', image of the viewer', 'result as new version, run without a name: "image of the viewer" (the installation lists images)' );
 
 // playbook options for large configurations go to type=playbook; a run killed for memory is told apart
 $r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'subprocess' => TRUE, 'memorythreshold' => '512', 'debugmemory' => TRUE, 'removestagefiles' => TRUE ) );

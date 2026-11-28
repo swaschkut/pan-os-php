@@ -1575,6 +1575,13 @@ class ViewerApp
         @chmod( $this->projectDir( $target['pid'] ) . '/' . $file, 0600 );
         // the note says where a version comes from: the run, and the project when it is another one
         $note = $j['type'] . ' run ' . substr( $j['jid'], 0, 8 ) . ( $other ? ' of project "' . $p['name'] . '"' : '' );
+        // … and with which pan-os-php image, where the installation offers more than one: results of the same run type
+        // on the same version differ only by that (e.g. the same playbook with beta and with alpha, then a diff)
+        if( ( $j['image'] ?? '' ) !== '' )
+            $note .= ', image ' . $j['image'];
+        elseif( count( $this->runImages() ) > 0
+            && ( in_array( $j['type'], self::RUN_IMAGE_TYPES, TRUE ) || ( $this->pluginRuns()[$j['type']]['imageField'] ?? null ) !== null ) )
+            $note .= ', image of the viewer';
         // the history on object level: the result as one commit on the history of the version the run ran on
         if( $parent )
             $this->runHistory( $p, $j, $user, $parent['file'], $file );

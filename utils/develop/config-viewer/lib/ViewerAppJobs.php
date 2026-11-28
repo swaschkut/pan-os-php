@@ -320,8 +320,13 @@ trait ViewerAppJobs
             if( (int)$other['id'] === (int)$c['id'] )
                 throw new ViewerException( 'diff: choose two different versions', 400 );
             $args = array( 'file1=%PROJECT%/' . $c['file'], 'file2=%PROJECT%/' . $other['file'] );
+            // with outputformatset type=diff prints only the set commands - display-xpath-and-xmlnode keeps the XML
+            // differences ( XPATH + / - ) in run.log as well, as without set commands
             if( !empty( $in['setcommands'] ) )
+            {
                 $args[] = 'outputformatset=set-commands.txt';
+                $args[] = 'display-xpath-and-xmlnode';
+            }
             if( !empty( $in['noruleordercheck'] ) )
                 $args[] = 'noruleordercheck';
             // filter: an XPath of the configuration (never a file - type=diff reads a filter that is a file name)
