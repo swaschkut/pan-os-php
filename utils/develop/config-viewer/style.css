@@ -37,6 +37,9 @@ th, td { padding: 5px 9px; border-bottom: 1px solid var(--line); text-align: lef
 thead th { position: sticky; top: 0; background: var(--bg); cursor: pointer; user-select: none; }
 table.plain thead th { cursor: default; position: static; }
 td.wrap { white-space: normal; }
+/* the buttons of a row (list of runs): all of them visible - the cell wraps instead of cutting the last ones off */
+td.runactions { white-space: normal; max-width: none; overflow: visible; text-overflow: clip; }
+td.runactions button, td.runactions a.button { margin: 0 0 4px 0; }
 .muted { color: var(--muted); }
 .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); }
 .badge.dirty { background: #fff4ce; border-color: #e0b400; }

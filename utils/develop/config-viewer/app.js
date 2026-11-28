@@ -64,7 +64,13 @@ async function run(fn) {
     try { message(''); await fn(); } catch (e) { message(e.message, 'error'); }
 }
 function clearTimers() { state.timers.forEach(clearInterval); state.timers = []; }
-function leave() { clearTimers(); state.user = null; state.csrf = null; state.cache.clear(); state.project = null; state.config = null; document.getElementById('nav').hidden = true; }
+// where the user is, kept in the address (#project=<pid>&tab=<tab>, #page=account, #p=<pid>&c=<version>): a reload of
+// the page comes back to it instead of the list of projects. null: the list of projects.
+function setPlace(place) {
+    const q = place ? new URLSearchParams(place).toString() : '';
+    try { history.replaceState(null, '', location.pathname + (q ? '#' + q : '')); } catch (e) { /* the address stays */ }
+}
+function leave() { setPlace(null); clearTimers(); state.user = null; state.csrf = null; state.cache.clear(); state.project = null; state.config = null; document.getElementById('nav').hidden = true; }
 function main(...nodes) { clearTimers(); const m = document.getElementById('main'); m.replaceChildren(...nodes.flat()); }
 
 // ---------------------------------------------------------------- parts in files of their own (js/, loaded by index.html before this file):
@@ -158,6 +164,8 @@ function viewerMenu(types) {
 async function showViewer(config, preset) {
     const p = state.project, pid = p.pid, canWrite = p.role !== 'read';
     state.config = config; state.cache.clear();
+    // a reload opens this version again (the list it showed is not kept; a link "Open" of a reference carries more)
+    setPlace({ p: pid, c: config.cid });
     const view = { rows: [], columns: [], sort: null, desc: false, page: 1, size: 50, quick: '', refs: new Map() };
     const base = () => 'projects/' + pid + '/configs/' + state.config.cid;
 
@@ -772,8 +780,14 @@ async function openFromHash() {
     if (h.get('p') && h.get('run') && h.get('file')) { await showRunFile(h.get('p'), h.get('run'), h.get('file')); return true; }
     // the figures of two stats runs compared: #p=<project>&stats=<run>[&other=<run>] (js/stats-compare.js)
     if (h.get('p') && h.get('stats')) { await showStatsCompare(h.get('p'), h.get('stats'), h.get('other')); return true; }
+    // where the user was (setPlace): the account page, a project with its tab
+    if (h.get('page') === 'account') { await showAccount(); return true; }
+    if (h.get('project')) {
+        if (h.get('tab')) { state.projectTab = state.projectTab || {}; state.projectTab[h.get('project')] = h.get('tab'); }
+        await showProject(h.get('project'));
+        return true;
+    }
     if (!h.get('p') || !h.get('c')) return false;
-    history.replaceState(null, '', location.pathname);
     const p = await api('GET', 'projects/' + encodeURIComponent(h.get('p')));
     const c = (await api('GET', 'projects/' + p.pid + '/configs')).configs.find(x => x.cid === h.get('c'));
     if (!c) throw new Error('this version does not exist any more');
@@ -786,5 +800,10 @@ run(async () => {
     try { me = await api('GET', 'me'); } catch (e) { showLogin(); return; }
     const deep = location.hash.length > 1;
     await entered(me, deep);
-    if (deep) await openFromHash();
+    // an address that leads nowhere (any more - a deleted project / version): the list of projects, with the reason
+    if (deep) {
+        let shown = false, why = null;
+        try { shown = await openFromHash(); } catch (e) { why = e; }
+        if (!shown) { await showProjects(); if (why) message(why.message, 'error'); }
+    }
 });

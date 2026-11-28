@@ -1884,6 +1884,18 @@ eq( array( status( $r ), $r[1]['a']['type'] ?? null, $r[1]['equal'] ?? null ), a
 $list = array_column( $alice->call( 'GET', $PB . '/runs' )[1]['runs'] ?? array(), null, 'jid' );
 eq( array( $list[$tr[0]]['has_stats'] ?? null, $list[$tr[0]]['has_result'] ?? null, $list[$sA]['has_stats'] ?? null, $list[$sA]['has_result'] ?? null, $list[basename( $drun )]['has_stats'] ?? null ),
     array( TRUE, TRUE, TRUE, FALSE, FALSE ), 'list of runs: which run has figures (stats compare) / a result configuration (diff of results)' );
+// "Result as new version": once per run in a project - the list says which version it is; deleted: possible again
+$r = $alice->call( 'POST', $PB . '/runs/' . $tr[1] . '/save' );
+$savedCid = $r[1]['cid'] ?? '';
+$list = array_column( $alice->call( 'GET', $PB . '/runs' )[1]['runs'] ?? array(), null, 'jid' );
+$again = $alice->call( 'POST', $PB . '/runs/' . $tr[1] . '/save' );
+eq( array( status( $r ), $list[$tr[1]]['saved'] ?? null, array_key_exists( 'saved', $list[$tr[0]] ?? array() ) ? $list[$tr[0]]['saved'] : 'missing', status( $again ), strpos( (string)( $again[1]['error'] ?? '' ), 'is a version of the project already' ) !== FALSE ),
+    array( 201, $savedCid, null, 409, TRUE ), 'result as new version: the run names its version (saved), a second time is refused' );
+eq( status( $alice->call( 'DELETE', $PB . '/configs/' . $savedCid ) ), 200, 'result as new version: that version deleted' );
+$list = array_column( $alice->call( 'GET', $PB . '/runs' )[1]['runs'] ?? array(), null, 'jid' );
+$r = $alice->call( 'POST', $PB . '/runs/' . $tr[1] . '/save' );
+eq( array( array_key_exists( 'saved', $list[$tr[1]] ?? array() ) ? $list[$tr[1]]['saved'] : 'missing', status( $r ) ), array( null, 201 ), 'result as new version: possible again when the version is gone' );
+$alice->call( 'DELETE', $PB . '/configs/' . ( $r[1]['cid'] ?? '' ) );
 // diff between the result configurations of two runs - no versions are made of them
 $r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0], 'run2' => $tr[1], 'setcommands' => TRUE ) );
 eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 0, 2 ) ), array( 202, array( 'file1=%PROJECT%/jobs/' . $tr[0] . '/out.xml', 'file2=%PROJECT%/jobs/' . $tr[1] . '/out.xml' ) ),
@@ -1978,6 +1990,16 @@ foreach( $jsParts as $file )
     $strict = $strict && preg_match( "#^/\\*.*?\\*/\\s*'use strict';#s", (string)file_get_contents( $viewer . '/' . $file ) ) === 1;
 eq( array( $last, $sortedLoaded, count( $jsParts ) > 0, $strict ), array( 'app.js', $jsParts, TRUE, TRUE ),
     'app.js: every part js/<part>.js is loaded by index.html before app.js, in strict mode' );
+// a reload stays where the user is: the address names the place (setPlace) and the start reads it
+$appJs = (string)file_get_contents( $viewer . '/app.js' );
+eq( array( strpos( $appJs, 'function setPlace(' ) !== FALSE, strpos( $appJs, "if (h.get('project'))" ) !== FALSE, strpos( $appJs, "h.get('page') === 'account'" ) !== FALSE,
+        strpos( (string)file_get_contents( $viewer . '/js/projects.js' ), 'setPlace(Object.assign({ project: p.pid }' ) !== FALSE, strpos( (string)file_get_contents( $viewer . '/js/project-tools.js' ), 'setPlace({ project: pid, tab: t[0] })' ) !== FALSE ),
+    array( TRUE, TRUE, TRUE, TRUE, TRUE ), 'reload: the address keeps project + tab / account / version, the start opens it again' );
+// list of runs: the cell with the buttons of a run is not cut off (table cells are at most 420px wide and hide what does
+// not fit - with more buttons "Delete", the last one, was not reachable)
+$css = (string)file_get_contents( $viewer . '/style.css' );
+eq( array( (bool)preg_match( '/td\.runactions \{[^}]*white-space: normal;[^}]*max-width: none;[^}]*overflow: visible;/', $css ), strpos( (string)file_get_contents( $viewer . '/js/projects.js' ), "el('td', { class: 'runactions' }" ) !== FALSE ),
+    array( TRUE, TRUE ), 'list of runs: the buttons of a run wrap and are never cut off' );
 // playbook editor: steps collapse, action / filter field are searched, checks at the fields, a step is moved by dragging;
 // what is only for the page is not written to the file
 $raw = (string)file_get_contents( dirname( __DIR__ ) . '/utils/common/html/editor/playbook/playbook-editor.html' );

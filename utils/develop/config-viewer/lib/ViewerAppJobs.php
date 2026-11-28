@@ -737,7 +737,21 @@ trait ViewerAppJobs
             return array( 'has_stats' => FALSE, 'has_result' => FALSE );
         $dir = $this->jobDir( $p, $j['jid'] );
         $result = $this->jobResultName( $j );
-        return array( 'has_stats' => is_file( $dir . '/' . self::STATS_RESULT_FILE ), 'has_result' => $result !== null && is_file( $dir . '/' . $result ) );
+        // saved: the version of this project that was made from the result of the run (null: none / deleted again)
+        $v = $this->jobVersion( $p, $j );
+        return array( 'has_stats' => is_file( $dir . '/' . self::STATS_RESULT_FILE ), 'has_result' => $result !== null && is_file( $dir . '/' . $result ),
+            'saved' => $v !== null ? $v['cid'] : null );
+    }
+
+    /**
+     * the version of the project that "Result as new version" made from this run (the newest one that still exists).
+     * Versions made before the column from_run existed are found by their note ("<type> run <first 8 of the run id>…").
+     */
+    private function jobVersion( array $p, array $j ): ?array
+    {
+        $v = $this->q( "SELECT cid, name FROM configs WHERE project_id = ? AND ( from_run = ? OR ( from_run IS NULL AND ( note = ? OR note LIKE ? ) ) ) ORDER BY id DESC LIMIT 1",
+            array( $p['id'], $j['jid'], $j['type'] . ' run ' . substr( $j['jid'], 0, 8 ), $j['type'] . ' run ' . substr( $j['jid'], 0, 8 ) . ',%' ) )->fetch();
+        return $v ? array( 'cid' => $v['cid'], 'name' => $v['name'] ) : null;
     }
 
     /** the name of the result configuration of a run type (playbook runs write out.xml; a run type of a plug-in names its own); null: none */

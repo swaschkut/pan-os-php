@@ -104,6 +104,8 @@ function projectTabs(pid, tabs) {
     function show(id) {
         const t = tabs.find(x => x[0] === id) || tabs[0];
         state.projectTab[pid] = t[0];
+        // only while this project is the page (the tabs are drawn before the page is shown)
+        if (state.project && state.project.pid === pid && !state.config) setPlace({ project: pid, tab: t[0] });
         for (const b of bar.children) { b.classList.toggle('on', b.dataset.tab === t[0]); b.setAttribute('aria-selected', b.dataset.tab === t[0] ? 'true' : 'false'); }
         panel.replaceChildren(...t[2].filter(x => x));
     }

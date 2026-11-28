@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------- projects
 async function showProjects() {
     state.project = null; state.config = null; state.cache.clear();
+    setPlace(null);
     const list = (await api('GET', 'projects')).projects;
     const name = el('input', { required: true, maxlength: 80 });
     main(el('div', { class: 'card' }, el('h2', { text: 'Projects' }),
@@ -46,6 +47,8 @@ function auditCard(path, title) {
 async function showProject(pid) {
     const p = await api('GET', 'projects/' + pid);
     state.project = p; state.config = null; state.cache.clear();
+    // the address says where we are (reload): the project and - set by projectTabs - its tab
+    setPlace(Object.assign({ project: p.pid }, (state.projectTab || {})[p.pid] ? { tab: state.projectTab[p.pid] } : {}));
     const canWrite = p.role !== 'read', owner = p.role === 'owner';
     // project type of a plug-in: its roles (each bound to a device / tenant) for the forms of runs that read from one
     state.projectRoles = p.type ? p.type.roles : null;
@@ -390,7 +393,8 @@ async function showProject(pid) {
                         el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
                             r.error ? el('span', { class: r.reason === 'memory' ? 'error' : 'muted', text: ' ' + (r.reason === 'memory' ? r.error.replace(/^out of memory: /, '') : r.error) }) : null),
                         el('td', { text: r.user || '' }), el('td', { text: fmtTime(r.started) }), el('td', { text: fmtTime(r.finished) }),
-                        el('td', {},
+                        // the buttons of a run: the cell is as wide as they need and wraps - never cut off (Delete is the last one)
+                        el('td', { class: 'runactions' },
                             open ? null : el('button', { type: 'button', text: openFiles.has(r.jid) ? 'Hide files' : 'Result files', onclick: () => run(async () => {
                                 if (openFiles.has(r.jid)) openFiles.delete(r.jid); else openFiles.add(r.jid);
                                 await drawRuns();
@@ -406,11 +410,18 @@ async function showProject(pid) {
                                     }) }), ' '] : null,
                             r.has_stats && runs.filter(x => x.has_stats).length > 1
                                 ? [el('a', { class: 'button', href: statsCompareLink(pid, r.jid), target: '_blank', rel: 'noopener', title: 'compare the figures of this run with another one, in a new tab', text: 'Compare stats' }), ' '] : null,
-                            canWrite && (r.type === 'playbook' || r.type === 'object-merger' || r.type === 'rule-merger' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
-                                const to = ev.target.parentNode.querySelector('select').value;
-                                await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
-                                await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
-                            }) }), ' in ', el('select', { 'aria-label': 'project for the result' }, writable.map(x => { const o = el('option', { value: x.pid, text: x.pid === pid ? 'this project' : x.name }); o.selected = x.pid === pid; return o; }))) : null, ' ',
+                            // the result configuration as a new version: once per run in this project (r.saved - again when that
+                            // version was deleted); into another project it stays possible
+                            canWrite && (r.type === 'playbook' || r.type === 'object-merger' || r.type === 'rule-merger' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? (() => {
+                                const targets = writable.filter(x => !(r.saved && x.pid === pid));
+                                const isVersion = r.saved ? el('span', { class: 'muted', title: 'the result of this run is a version of this project already (Configuration versions)', text: 'is a version ' }) : null;
+                                if (!targets.length) return isVersion;
+                                return el('span', {}, isVersion, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
+                                    const to = ev.target.parentNode.querySelector('select').value;
+                                    await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
+                                    await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
+                                }) }), ' in ', el('select', { 'aria-label': 'project for the result' }, targets.map(x => { const o = el('option', { value: x.pid, text: x.pid === pid ? 'this project' : x.name }); o.selected = x.pid === pid; return o; })));
+                            })() : null, ' ',
                             canWrite && r.type === 'import' && (r.state === 'failed' || r.state === 'done') && (r.args || []).some(a => a.startsWith('x-import-target=scm:')) ? el('button', { type: 'button', text: 'Convert again', title: 'only the conversion to XML (scm-export-xml) on the export this run has already downloaded - no download, no network; a new version (e.g. after an update of pan-os-php that converts more)', onclick: () => run(async () => {
                                 if (r.state === 'done' && !confirm('Convert the export of this import again? The result becomes a new version (no download, no network).')) return;
                                 await api('POST', base + '/runs/' + r.jid + '/convert');

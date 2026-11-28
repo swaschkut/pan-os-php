@@ -218,6 +218,7 @@ function parseServiceAccountCsv(text) {
 }
 
 async function showAccount() {
+    setPlace({ page: 'account' });
     const oldPw = el('input', { type: 'password', autocomplete: 'current-password', required: true });
     const newPw = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: 10 });
     const nodes = [el('form', { class: 'card', onsubmit: (ev) => { ev.preventDefault(); run(async () => {

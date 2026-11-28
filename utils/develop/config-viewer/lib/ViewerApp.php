@@ -312,6 +312,9 @@ class ViewerApp
         $cols = array_column( $this->db->query( 'PRAGMA table_info(configs)' )->fetchAll(), 'name' );
         if( !in_array( 'changes', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE configs ADD COLUMN changes TEXT' );
+        // the run a version was made from ("Result as new version" in the same project): offered once per run
+        if( !in_array( 'from_run', array_column( $this->db->query( 'PRAGMA table_info(configs)' )->fetchAll(), 'name' ), TRUE ) )
+            $this->db->exec( 'ALTER TABLE configs ADD COLUMN from_run TEXT' );
         // the server of a query: given, or automatic (server '') - the domain controllers of 'domain' from DNS
         $cols = array_column( $this->db->query( 'PRAGMA table_info(ldap_queries)' )->fetchAll(), 'name' );
         if( !in_array( 'domain', $cols, TRUE ) )
@@ -1570,6 +1573,9 @@ class ViewerApp
         if( $j['state'] !== 'done' || $result === null || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
             throw new ViewerException( 'this run has no result configuration', 409 );
         $other = $target['id'] !== $p['id'];
+        // once per run and project: the result of this run is a version of the project already (deleted: possible again)
+        if( !$other && ( $has = $this->jobVersion( $p, $j ) ) !== null )
+            throw new ViewerException( 'the result of this run is a version of the project already (' . $has['name'] . ')', 409 );
         $parent = $other ? FALSE : $this->q( 'SELECT id, name, file FROM configs WHERE id = ? AND project_id = ?', array( $j['config_id'], $p['id'] ) )->fetch();
         $file = self::randomId() . '.xml';
         if( !copy( $out, $this->projectDir( $target['pid'] ) . '/' . $file ) )
@@ -1587,7 +1593,7 @@ class ViewerApp
         // the history on object level: the result as one commit on the history of the version the run ran on
         if( $parent )
             $this->runHistory( $p, $j, $user, $parent['file'], $file );
-        return $this->configInsert( $target, $user, $parent ? $parent['name'] : $j['type'] . ' result', $file, $parent ? (int)$parent['id'] : null, $note )
+        return $this->configInsert( $target, $user, $parent ? $parent['name'] : $j['type'] . ' result', $file, $parent ? (int)$parent['id'] : null, $note, $other ? null : $j['jid'] )
             + array( 'pid' => $target['pid'] );
     }
 
@@ -2643,11 +2649,11 @@ class ViewerApp
         return $this->configInsert( $p, $user, $label, $file, null, 'upload' );
     }
 
-    private function configInsert( array $p, array $user, string $label, string $file, ?int $parentId, string $note ): array
+    private function configInsert( array $p, array $user, string $label, string $file, ?int $parentId, string $note, ?string $fromRun = null ): array
     {
         $cid = self::randomId();
-        $this->q( 'INSERT INTO configs (cid, project_id, name, file, size, parent_id, note, created_by, created) VALUES (?,?,?,?,?,?,?,?,?)',
-            array( $cid, $p['id'], $label, $file, filesize( $this->projectDir( $p['pid'] ) . '/' . $file ), $parentId, $note, $user['id'], time() ) );
+        $this->q( 'INSERT INTO configs (cid, project_id, name, file, size, parent_id, note, created_by, created, from_run) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            array( $cid, $p['id'], $label, $file, filesize( $this->projectDir( $p['pid'] ) . '/' . $file ), $parentId, $note, $user['id'], time(), $fromRun ) );
         return array( 'cid' => $cid, 'name' => $label, 'note' => $note );
     }
 
