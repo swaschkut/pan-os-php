@@ -1326,6 +1326,9 @@ class ViewerApp
         return $this->plugins->runs();
     }
 
+    /** built-in run types that can run with another pan-os-php image (request: image = a name of runImages()) */
+    const RUN_IMAGE_TYPES = array( 'stats', 'playbook' );
+
     /**
      * the names of the further images a run may use (PANOSPHP_VIEWER_CONTAINER_IMAGES - the same setting for web part
      * and job runner). The web part knows only the names; a setting that is not valid offers none (the job runner

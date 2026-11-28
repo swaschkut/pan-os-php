@@ -384,6 +384,14 @@ waitRun( $P . '/runs/' . $jidV );
 $c = array_values( array_filter( calls(), function( $c ) use ( $jidV ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidV, $c, TRUE ); } ) )[0] ?? array();
 eq( array( in_array( 'pan-os-php:test', $c, TRUE ), in_array( 'example.test/pan-os-php:beta', $c, TRUE ) ), array( TRUE, FALSE ), 'the same run type without a name: the image of the viewer' );
 
+// the built-in stats run with another image
+$r = call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array( 'image' => 'beta' ) );
+$jidS = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $jidS );
+$c = array_values( array_filter( calls(), function( $c ) use ( $jidS ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidS, $c, TRUE ); } ) )[0] ?? array();
+eq( array( $r[1]['state'] ?? null, $r[1]['image'] ?? null, in_array( 'example.test/pan-os-php:beta', $c, TRUE ), in_array( 'pan-os-php:test', $c, TRUE ) ),
+    array( 'done', 'beta', TRUE, FALSE ), 'built-in stats run with another image: started with the image of the name' );
+
 // playbook with a BP JSON, result as version
 $r = call( 'POST', $P . '/files?kind=playbook', null, array( 'pb.json', json_encode( array( 'command' => array(
     array( 'type' => 'address', 'actions' => 'actions=exportToExcel:addresses.html', 'location' => 'location=any' ),
@@ -391,6 +399,12 @@ $r = call( 'POST', $P . '/files?kind=playbook', null, array( 'pb.json', json_enc
 $pb = $r[1]['fid'] ?? '';
 $r = call( 'POST', $P . '/files?kind=bp', null, array( 'bp.json', file_get_contents( $repo . '/utils/api/v1/bp/scm_bp_sp_panw.json' ), 'file' ) );
 $bp = $r[1]['fid'] ?? '';
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'bp' => $bp, 'image' => 'beta' ) );
+$jidP = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $jidP );
+$c = array_values( array_filter( calls(), function( $c ) use ( $jidP ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidP, $c, TRUE ); } ) )[0] ?? array();
+eq( array( $r[1]['state'] ?? null, in_array( 'example.test/pan-os-php:beta', $c, TRUE ), in_array( 'out.xml', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( 'done', TRUE, TRUE ),
+    'built-in playbook run with another image: started with that image, result configuration in the folder of the run' );
 $r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'bp' => $bp ) );
 $jid2 = $r[1]['jid'] ?? '';
 $r = waitRun( $P . '/runs/' . $jid2 );

@@ -295,6 +295,11 @@ async function showProject(pid) {
         const diffFields = el('span', { class: 'row' }, field('Compare with (file2, the newer one)', dOther), field('Set commands file1 → file2', dSet),
             field('No rule order check', dOrder), el('label', { class: 'grow' }, 'Only this part (XPath)', dXpath));
         const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp), versionField = field('Version', rVersion);
+        // another pan-os-php image for a stats / playbook run (e.g. the same playbook with an older release): the names
+        // the installation lists - no field when it lists none
+        const runImages = (plug.images || []);
+        const rImage = el('select', { title: 'run with another pan-os-php image of this installation - it may not know every option of this viewer' }, el('option', { value: '', text: 'the image of the viewer' }), runImages.map(v => el('option', { value: v, text: v })));
+        const imageField = field('pan-os-php image', rImage);
         // PSK list: this version and / or - with an SCM key of mine - the firewalls managed by SCM (newest local
         // configuration), both compared by the SHA-1 of the pre-shared key; the PSK lists are sensitive (download once)
         // only SCM keys the project may use: bound to a tenant - only that one; bound to a firewall / Panorama - none; a
@@ -316,6 +321,7 @@ async function showProject(pid) {
             const pr = plug.runs[rType.value];
             pbField.hidden = pbOpts.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
             diffFields.hidden = rType.value !== 'diff';
+            imageField.hidden = !runImages.length || (rType.value !== 'stats' && rType.value !== 'playbook');
             pskFields.hidden = rType.value !== 'psk-list';
             if (rType.value === 'psk-list') { if (!pskNoVersion.parentNode) rVersion.prepend(pskNoVersion); }
             else if (pskNoVersion.parentNode) { if (rVersion.value === '') rVersion.selectedIndex = 1; pskNoVersion.remove(); }
@@ -402,6 +408,7 @@ async function showProject(pid) {
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const body = {};
                 if (rBp.value) body.bp = rBp.value;
+                if (!imageField.hidden && rImage.value) body.image = rImage.value;
                 if (rType.value === 'playbook') {
                     if (!rPlaybook.value) throw new Error('choose a playbook (upload one under "Project files")');
                     if (rPlaybook.value.startsWith('predefined:')) body.predefined = rPlaybook.value.slice(11); else body.playbook = rPlaybook.value;
@@ -442,7 +449,7 @@ async function showProject(pid) {
                 await api('POST', base + (noVersion ? '' : '/configs/' + rVersion.value) + '/' + rType.value + '/runs', body);
                 message('run queued');
                 await refreshRuns();
-            }); } }, field('Run', rType), versionField, diffFields, pskFields, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
+            }); } }, field('Run', rType), versionField, diffFields, pskFields, pbField, locField, plugFields, bpField, imageField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
             runsBody);
         // while a run is open: refresh the list
         let openRuns = await drawRuns();

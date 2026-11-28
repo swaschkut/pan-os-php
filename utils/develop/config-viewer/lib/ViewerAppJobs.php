@@ -297,6 +297,14 @@ trait ViewerAppJobs
         }
         if( in_array( $type, array( 'object-merger', 'rule-merger', 'merger-possible-report' ), TRUE ) )
             $args = $this->mergerArgs( $user, $pid, $type, $in );
+        // another pan-os-php image for a built-in run (stats, playbook): by its name in the list of the installation, as
+        // for a run type of a plug-in with a field of kind "image" - e.g. the same playbook with an older release
+        if( in_array( $type, self::RUN_IMAGE_TYPES, TRUE ) )
+        {
+            $image = $in['image'] ?? '';
+            if( $image !== '' && ( !is_string( $image ) || !in_array( $image, $this->runImages(), TRUE ) ) )
+                throw new ViewerException( 'image: one of the images of this installation (' . ( implode( ', ', $this->runImages() ) ?: 'none is set up' ) . ') or empty', 400 );
+        }
         if( $type === 'stats' )
         {
             $location = $in['location'] ?? 'any';

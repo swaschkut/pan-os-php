@@ -2179,6 +2179,12 @@ eq( status( $alice->call( 'POST', $PLC . '/example-export/runs', array( 'locatio
 eq( array( $m['images'] ?? null, $m['runs']['img-show']['fields'][0]['kind'] ?? null ), array( array( 'beta', 'main' ), 'image' ), 'another image: the names of the installation and the field in meta (no image reference)' );
 foreach( array( array( 'alpha', 'a name that is not in the list' ), array( 'example.test/pan-os-php:beta', 'an image reference' ), array( array( 'beta' ), 'a list' ) ) as $bad )
     eq( status( $alice->call( 'POST', $PLC . '/img-show/runs', array( 'release' => $bad[0] ) ) ), 400, 'another image: ' . $bad[1] . ' is refused' );
+// the built-in run types stats and playbook take a name too; other run types ignore it
+eq( array( status( $alice->call( 'POST', $PLC . '/stats/runs', array( 'image' => 'alpha' ) ) ), status( $alice->call( 'POST', $PLC . '/stats/runs', array( 'image' => 'example.test/pan-os-php:beta' ) ) ) ),
+    array( 400, 400 ), 'another image, built-in stats run: a name that is not in the list / an image reference is refused' );
+$r = $alice->call( 'POST', $PLC . '/stats/runs', array( 'image' => 'beta' ) );
+eq( array( status( $r ), $r[1]['image'] ?? null ), array( 202, 'beta' ), 'another image, built-in stats run: queued with the name' );
+eq( waitRun( $alice, $PL . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'failed', 'another image, built-in stats run without containers: fails (not run with the pan-os-php of the viewer)' );
 $r = $alice->call( 'POST', $PLC . '/img-show/runs', array() );
 eq( array( status( $r ), array_key_exists( 'image', $r[1] ) ? $r[1]['image'] : 'missing', $r[1]['args'][1] ?? null ), array( 202, null, 'actions=exportToExcel:addresses-viewer.html' ), 'another image: not chosen - the image of the viewer' );
 eq( waitRun( $alice, $PL . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'done', 'another image: the run without a name runs as every run' );

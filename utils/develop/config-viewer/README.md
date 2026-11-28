@@ -505,10 +505,15 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 | `PANOSPHP_VIEWER_CONTAINER_DNS` | DNS servers (IP addresses, `,` separated) of a run step with network - for internal names (AD domain controllers, firewalls); compose: `VIEWER_RUN_DNS` in `.env`; empty: the runtime decides (Docker: the resolver of the host, or public ones when the host has only a local one) |
 | `PANOSPHP_VIEWER_CONTAINER_USER` | `uid:gid` in the container (default: the one of the job runner, so that it can read the result files) |
 
-**A run with another image.** A run type of a plug-in can have one field of kind `image`
-(`array( 'name' => 'release', 'kind' => 'image', 'label' => 'Release' )`): the run then uses another pan-os-php image -
-e.g. the same playbook with an older release, to compare the results. The user chooses a **name** from the list of
-the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`); empty = the image of the viewer.
+**A run with another image.** A run can use another pan-os-php image - e.g. the same playbook with an older release,
+to compare the results (playbook run per release, "Result as new version", then a diff run between the two versions).
+The user chooses a **name** from the list of the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`); empty = the image
+of the viewer. Where:
+
+* the built-in run types **stats** and **playbook**: field "pan-os-php image" of the Runs card (shown when the
+  installation lists images; API: `image` in the request of the run)
+* a run type of a plug-in with one field of kind `image`
+  (`array( 'name' => 'release', 'kind' => 'image', 'label' => 'Release' )`)
 
 * A request, a job and a plug-in only ever hold the name (`ViewerPluginRun::image()` gives it to the plug-in, e.g.
   for the name of a result file). The image behind a name is known to the job runner alone and comes from the setting
