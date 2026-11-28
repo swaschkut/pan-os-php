@@ -4,6 +4,9 @@ Offline on two Panorama XML files: the selected device groups with their parent 
 stacks, templates and the shared objects they use go from Panorama A (file1) to Panorama B (file2); file1 is cleaned
 up. Concept: [todo/panorama-move-concept.md](../../../todo/panorama-move-concept.md).
 
+A complete example with files of this repository - one device group into an empty Panorama, with the report and the
+checklist of the manual steps: [DEMO_panorama_move.md](DEMO_panorama_move.md).
+
 ```
 pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt                                  # check run
 pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt mode=execute out1=A_new.xml out2=B_new.xml
