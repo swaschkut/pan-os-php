@@ -28,6 +28,12 @@
       "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will create the Best Practice Zone Protection Profile called             *\n*  'Recommended_Zone_Protection'.                                                                               *\n*  This config follows the relevant iron-skillet snippets (https://github.com/PaloAltoNetworks/iron-skillet);   *\n*  pan-os-php builds it in the object class of each profile type (static method ironSkilletXml()).              *\n*                                                                                                               *\n*****************************************************************************************************************"
     },
     {
+      "type": "securityprofile",
+      "actions": "actions=clone-predefined-and-change-references",
+      "location": "location=any",
+      "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will create the Best Practice Security Profiles called 'Alert-Only-XX'.  *\n*  (ie; 'Alert-Only-AS',' Alert-Only-AV','Alert-Only-FB','Alert-Only-URL','Alert-Only-VP','Alert-Only-WF')      *\n*                                                                                                               *\n*  This command will also create the Best Practice Security Profile Group called 'Alert-Only'.                  *\n*  This config follows the relevant iron-skillet snippets (https://github.com/PaloAltoNetworks/iron-skillet);   *\n*  pan-os-php builds it in the object class of each profile type (static method ironSkilletXml()).              *\n*                                                                                                               *\n*****************************************************************************************************************"
+    },
+    {
       "type": "zone",
       "actions": "actions=zpp-Set:Alert_Only_Zone_Protection",
       "filter": "filter=!(zpp is.set)",
