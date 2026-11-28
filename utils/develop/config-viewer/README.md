@@ -671,11 +671,14 @@ has_result, saved, and for a playbook run `playbook` (file id or `predefined:<na
 `versions()` - cid, name, note, created, size, from_run (the run whose result it is; null: uploaded / imported);
 `files()` - fid, kind, name, size, created; `images()` - `@viewer` and the names of the installation.
 A run also has `image_id` (the id of the image it ran with; null: not known), a diff run `run1` / `run2` (the two run
-results it compared) or `other` (the other version), and `diff`: `PASS` / `FAIL` (the FinalResult of type=diff).
+results it compared) or `other` (the other version), `diff`: `PASS` / `FAIL` (the FinalResult of type=diff) and
+`diff_hash` (fingerprint of its differences - the same differences in another diff run, the same hash); every finished
+run `panosphp` (the pan-os-php version from its run.log, e.g. `2.1.62`). These are read once and kept with the run.
 `imageIds()` - name => the id of the image now (null: not known); `statsCompare( <jid>, <jid> )` - the figures of two
 runs with a stats result compared (`StatsCompare::compare()`: equal, same, changed, only_a, only_b, blocks, …);
 `notFull( <jid> )` - the visibility not 100 % of a run (block, name, group, value; the exclusions of
-compare-stats-not-100). Both null for a run that is no stats run of the project.
+compare-stats-not-100). Both null for a run that is no stats run of the project. Both are kept in the hidden folder
+of the run (`.cache/`, not a result file): the stats result of a finished run does not change, a page computes them once.
 
 **Table blocks** - rows of the plug-in (e.g. every MU IP pool, every tunnel), some columns editable; stored are the
 changes per row, the value of the plug-in stays visible below a changed cell:

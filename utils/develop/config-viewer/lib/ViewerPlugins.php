@@ -815,7 +815,9 @@ class ViewerPluginPage
      * the image of the viewer), image_id (the id of the image it ran with; null: not known), state, created, started,
      * finished, error, has_stats, has_result, saved; for a playbook run 'playbook' (file id, or "predefined:<name>"),
      * 'then' (file id), 'bp' (file id); for a diff run 'run1' / 'run2' (the two run results it compared) or 'other' (the
-     * other version), and 'diff' (PASS / FAIL: the FinalResult of type=diff) - null when not set
+     * other version), 'diff' (PASS / FAIL: the FinalResult of type=diff) and 'diff_hash' (fingerprint of its differences:
+     * the same differences, the same hash); every finished run 'panosphp' (the pan-os-php version from its run.log, e.g.
+     * 2.1.62) - null when not set
      */
     public function runs(): array
     {

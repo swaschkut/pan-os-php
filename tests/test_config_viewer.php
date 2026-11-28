@@ -2016,7 +2016,20 @@ eq( array( json_decode( $dr['sub'] ?? 'null', TRUE ), json_decode( $dr['cells'][
     array( array( $tr[0], $tr[1], FALSE, $final ), array( array( TRUE, TRUE ), TRUE, null, null, null ), TRUE, array( $tr[0], $tr[1] ), basename( $rd ) ),
     'plug-in page: a diff run of two run results - run1 / run2 and its FinalResult (' . $final . '); stats compare and not 100 % of those runs; a time and a link to the stats compare in the cell' );
 $meta = json_decode( (string)( new PDO( 'sqlite:' . $data . '/viewer.sqlite' ) )->query( "SELECT meta FROM jobs WHERE jid = '" . basename( $rd ) . "'" )->fetchColumn(), TRUE );
-eq( $meta['result'] ?? null, $final, 'diff run: the FinalResult is kept with the run once read' );
+eq( array( $meta['result'] ?? null, (bool)preg_match( '/^[0-9a-f]{32}$/', $meta['hash'] ?? '' ) ), array( $final, TRUE ),
+    'diff run: the FinalResult and the fingerprint of its differences are kept with the run once read' );
+// the pan-os-php version of a run (from run.log), kept with the run; the stats compares of a page are kept in the hidden
+// folder of the run (not a result file) and give the same
+$logT = (string)$alice->call( 'GET', $PB . '/runs/' . $tr[0] . '/files/run.log' )[1];
+$metaT = json_decode( (string)( new PDO( 'sqlite:' . $data . '/viewer.sqlite' ) )->query( "SELECT meta FROM jobs WHERE jid = '" . $tr[0] . "'" )->fetchColumn(), TRUE );
+preg_match( '/PAN-OS-PHP version: ([0-9][0-9A-Za-z._-]*?)\.?\s/', $logT, $vm );
+$cdir = $data . '/projects/' . basename( $PB ) . '/jobs/' . $tr[0] . '/.cache';
+$again = array_column( $alice->call( 'GET', $MX )[1]['blocks'] ?? array(), null, 'name' )['cmp'] ?? array();
+eq( array( $metaT['panosphp'] ?? 'missing', is_file( $cdir . '/stats-compare-' . $tr[1] . '.json' ), is_file( $cdir . '/not-full.json' ),
+        in_array( '.cache/not-full.json', array_column( $alice->call( 'GET', $PB . '/runs/' . $tr[0] )[1]['files'] ?? array(), 'name' ), TRUE ),
+        $again['rows'] ?? null ),
+    array( $vm[1] ?? 'none', TRUE, TRUE, FALSE, $blk['cmp']['rows'] ?? 'x' ),
+    'page readers: the pan-os-php version of a run; stats compare / not 100 % kept in .cache of the run (not a result file), the same on the next view' );
 $has = function( $a, $k ) { return is_array( $a ) && array_key_exists( $k, $a ) ? $a[$k] : 'missing'; };
 eq( array( json_decode( $cmp['ids']['label'] ?? 'null', TRUE ), $has( $cmp['ids'] ?? null, 'at' ), $has( $cmp['ids']['cells'][0] ?? null, 'compare' ), $has( $cmp['ids']['cells'][0] ?? null, 'at' ) ),
     array( array( '@viewer' => null, 'beta' => null, 'main' => null ), null, null, null ),

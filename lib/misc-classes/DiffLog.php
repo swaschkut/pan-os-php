@@ -29,18 +29,21 @@ class DiffLog
      * @param string $file the output of type=diff (run.log)
      * @param int $maxEntries entries kept (the rest is counted only)
      * @param int $maxLines lines kept per entry (the rest is counted only)
-     * @return array{final:?string,entries:array,count:int,truncated:bool}
+     * @return array{final:?string,entries:array,count:int,truncated:bool,hash:?string}
      *   entries: xpath, location (shared, device-group <name>, template <name>, vsys <name>, …), kind (path below the
      *   location, e.g. address, pre-rulebase/security/rules), name (the last entry name of the path; '' when the
      *   XPath does not end with an entry), added, removed (number of + / - lines), lines (array of '+…' / '-…'),
-     *   lines_cut (lines not kept)
+     *   lines_cut (lines not kept); hash: fingerprint of all differences (32 hex; the same differences, the same hash)
      */
     public static function read( string $file, int $maxEntries = 5000, int $maxLines = 300 ): array
     {
-        $out = array( 'final' => null, 'entries' => array(), 'count' => 0, 'truncated' => FALSE );
+        $out = array( 'final' => null, 'entries' => array(), 'count' => 0, 'truncated' => FALSE, 'hash' => null );
         $fh = @fopen( $file, 'r' );
         if( $fh === FALSE )
             return $out;
+        // the fingerprint of all differences (every XPath and line, also those not kept): the same differences of
+        // another diff run have the same hash
+        $h = hash_init( 'sha256' );
         $cur = null;
         $flush = function() use ( &$cur, &$out, $maxEntries ) {
             if( $cur === null )
@@ -65,6 +68,7 @@ class DiffLog
             {
                 $flush();
                 $cur = self::entry( substr( $line, 7 ) );
+                hash_update( $h, 'X' . substr( $line, 7 ) . "\n" );
                 continue;
             }
             // the end of the differences: a line of #, the set commands, the end of the script
@@ -77,6 +81,7 @@ class DiffLog
             if( $cur !== null && ( $line[0] === '+' || $line[0] === '-' ) )
             {
                 $cur[$line[0] === '+' ? 'added' : 'removed']++;
+                hash_update( $h, $line . "\n" );
                 if( count( $cur['lines'] ) < $maxLines )
                     $cur['lines'][] = $line;
                 else
@@ -85,9 +90,9 @@ class DiffLog
         }
         fclose( $fh );
         $flush();
+        $out['hash'] = substr( hash_final( $h ), 0, 32 );
         return $out;
     }
-
     /** "- FinalResult: PASS | FAIL" of the output of type=diff; null: no such line (not finished, failed) */
     public static function finalResult( string $file ): ?string
     {

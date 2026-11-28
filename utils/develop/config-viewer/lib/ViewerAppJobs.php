@@ -854,26 +854,59 @@ trait ViewerAppJobs
     }
 
     /**
-     * the result of a finished diff run: 'PASS' / 'FAIL' - the line "- FinalResult: …" type=diff writes at the end of
-     * run.log (what type=playbook-validation checks); null: not finished / no such line. Read once, then kept with the
-     * run (meta 'result').
+     * the result of a finished diff run: 'result' PASS / FAIL (the line "- FinalResult: …" type=diff writes at the end of
+     * run.log - what type=playbook-validation checks; null: not finished / no such line) and 'hash' (fingerprint of all
+     * differences, DiffLog: the same differences in another diff run have the same hash). Read once, then kept with the
+     * run (meta).
      */
-    private function diffResult( array $p, array $j ): ?string
+    private function diffResult( array $p, array $j ): array
     {
+        $none = array( 'result' => null, 'hash' => null );
         if( $j['type'] !== 'diff' || $j['state'] !== 'done' )
+            return $none;
+        $meta = json_decode( (string)( $j['meta'] ?? '' ), TRUE );
+        $meta = is_array( $meta ) ? $meta : array();
+        if( in_array( $meta['result'] ?? null, array( 'PASS', 'FAIL' ), TRUE ) && isset( $meta['hash'] ) )
+            return array( 'result' => $meta['result'], 'hash' => $meta['hash'] );
+        $log = $this->jobDir( $p, $j['jid'] ) . '/run.log';
+        if( !is_file( $log ) || is_link( $log ) )
+            return $none;
+        $d = DiffLog::read( $log, 0, 0 );
+        if( $d['final'] === null )
+            return $none;
+        $this->jobMetaMerge( (int)$j['id'], array( 'result' => $d['final'], 'hash' => $d['hash'] ) );
+        return array( 'result' => $d['final'], 'hash' => $d['hash'] );
+    }
+
+    /** adds keys to the meta of a run (what is there now is kept: two readers may each add their key) */
+    private function jobMetaMerge( int $id, array $add ): void
+    {
+        $own = !$this->db->inTransaction();
+        if( $own )
+            $this->db->beginTransaction();
+        $meta = json_decode( (string)$this->q( 'SELECT meta FROM jobs WHERE id = ?', array( $id ) )->fetchColumn(), TRUE );
+        $this->q( 'UPDATE jobs SET meta = ? WHERE id = ?', array( json_encode( $add + ( is_array( $meta ) ? $meta : array() ) ), $id ) );
+        if( $own )
+            $this->db->commit();
+    }
+
+    /**
+     * the pan-os-php version a finished run ran with, from its run.log (" - PAN-OS-PHP version: 2.1.62. [UNIX] …"):
+     * 2.1.62, 2.1.64.alpha; null: not finished / no such line. Read once, then kept with the run (meta 'panosphp').
+     */
+    private function runPanosphpVersion( array $p, array $j ): ?string
+    {
+        if( !in_array( $j['state'], array( 'done', 'failed' ), TRUE ) )
             return null;
         $meta = json_decode( (string)( $j['meta'] ?? '' ), TRUE );
         $meta = is_array( $meta ) ? $meta : array();
-        if( in_array( $meta['result'] ?? null, array( 'PASS', 'FAIL' ), TRUE ) )
-            return $meta['result'];
+        if( array_key_exists( 'panosphp', $meta ) )
+            return $meta['panosphp'];
         $log = $this->jobDir( $p, $j['jid'] ) . '/run.log';
-        $result = is_file( $log ) && !is_link( $log ) ? DiffLog::finalResult( $log ) : null;
-        if( $result !== null )
-        {
-            $meta['result'] = $result;
-            $this->q( 'UPDATE jobs SET meta = ? WHERE id = ?', array( json_encode( $meta ), $j['id'] ) );
-        }
-        return $result;
+        $head = is_file( $log ) && !is_link( $log ) ? @file_get_contents( $log, FALSE, null, 0, 65536 ) : FALSE;
+        $v = is_string( $head ) && preg_match( '/PAN-OS-PHP version: ([0-9][0-9A-Za-z._-]{0,40}?)\.?(\s|$)/', $head, $m ) ? $m[1] : null;
+        $this->jobMetaMerge( (int)$j['id'], array( 'panosphp' => $v ) );
+        return $v;
     }
 
     /**
@@ -946,7 +979,9 @@ trait ViewerAppJobs
         {
             if( !is_string( $a ) || !is_string( $b ) || $a === $b )
                 return null;
-            return StatsCompare::compare( $this->statsRun( $p, $a )['json'], $this->statsRun( $p, $b )['json'] );
+            return $this->statsCached( $p, $a, 'stats-compare-' . $this->jobRow( $p, $b )['jid'], array( $b ), function() use ( $p, $a, $b ) {
+                return StatsCompare::compare( $this->statsRun( $p, $a )['json'], $this->statsRun( $p, $b )['json'] );
+            } );
         }
         catch( ViewerException $e )
         {
@@ -964,16 +999,51 @@ trait ViewerAppJobs
         {
             if( !is_string( $jid ) )
                 return null;
-            $out = array();
-            foreach( StatsCompare::blocks( $this->statsRun( $p, $jid )['json'] ) as $header => $block )
-                foreach( StatsCompare::notFull( $block ) as $name => $d )
-                    $out[] = array( 'block' => (string)$header, 'name' => (string)$name, 'group' => $d['group'] ?? null, 'value' => $d['value'] );
-            return $out;
+            return $this->statsCached( $p, $jid, 'not-full', array(), function() use ( $p, $jid ) {
+                $out = array();
+                foreach( StatsCompare::blocks( $this->statsRun( $p, $jid )['json'] ) as $header => $block )
+                    foreach( StatsCompare::notFull( $block ) as $name => $d )
+                        $out[] = array( 'block' => (string)$header, 'name' => (string)$name, 'group' => $d['group'] ?? null, 'value' => $d['value'] );
+                return $out;
+            } );
         }
         catch( ViewerException $e )
         {
             return null;
         }
+    }
+
+    /**
+     * a result computed from the stats result of finished runs, kept in the hidden folder of the run (.cache/<name>.json):
+     * the stats result of a finished run does not change, so a page reads it once instead of on every view. Taken only
+     * while the run and the other runs it was made with are finished runs with a stats result (else computed again -
+     * and fails as before). The cache goes with the folder of the run.
+     */
+    private function statsCached( array $p, string $jid, string $name, array $others, callable $make )
+    {
+        $j = $this->jobRow( $p, $jid );
+        $ok = function( array $x ) use ( $p ) {
+            $f = $this->jobDir( $p, $x['jid'] ) . '/' . self::STATS_RESULT_FILE;
+            return $x['state'] === 'done' && is_file( $f ) && !is_link( $f );
+        };
+        $dir = $this->jobDir( $p, $j['jid'] ) . '/.cache';
+        $file = $dir . '/' . $name . '.json';
+        $valid = $ok( $j );
+        foreach( $others as $o )
+            $valid = $valid && $ok( $this->jobRow( $p, $o ) );
+        if( $valid && is_file( $file ) && !is_link( $file ) )
+        {
+            $v = json_decode( (string)file_get_contents( $file ), TRUE );
+            if( is_array( $v ) )
+                return $v;
+        }
+        $v = $make();
+        if( $valid && ( is_dir( $dir ) || @mkdir( $dir, 0700 ) ) )
+        {
+            @file_put_contents( $file . '.tmp', json_encode( $v ) );
+            @rename( $file . '.tmp', $file );
+        }
+        return $v;
     }
 
     /** a finished stats run of the project with what tells it apart from another one: version, note of the version, image */

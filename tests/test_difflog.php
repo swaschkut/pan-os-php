@@ -64,6 +64,9 @@ $e = $ab['entries'][0];
 eq( array( $e['location'], $e['kind'], $e['added'], $e['removed'], $e['lines'] ), array( 'shared', 'address', 1, 0, array( '+<description>changed</description>' ) ), 'an entry: + lines of file2' );
 eq( array( $ba['count'], $ba['entries'][0]['added'], $ba['entries'][0]['removed'], DiffLog::finalResult( $tmp . '/ba.log' ) ), array( $n, 0, 1, 'FAIL' ), 'the other way round: - lines' );
 eq( array( $aa['final'], $aa['count'], DiffLog::finalResult( $tmp . '/aa.log' ) ), array( 'PASS', 0, 'PASS' ), 'the same file twice: PASS, no entry' );
+exec( 'cd ' . escapeshellarg( $tmp ) . " && $php $tool type=diff file1=a.xml file2=b.xml outputformatset=set.txt display-xpath-and-xmlnode > ab2.log 2>&1" );
+eq( array( strlen( (string)$ab['hash'] ), DiffLog::read( $tmp . '/ab2.log', 0, 0 )['hash'] === $ab['hash'], $ba['hash'] === $ab['hash'], $aa['hash'] === $ab['hash'] ),
+    array( 32, TRUE, FALSE, FALSE ), 'fingerprint: the same differences (also with set commands, nothing kept) - the same hash; other differences - another' );
 $cut = DiffLog::read( $tmp . '/ab.log', 2, 0 );
 eq( array( count( $cut['entries'] ), $cut['count'], $cut['truncated'], $cut['entries'][0]['lines'], $cut['entries'][0]['lines_cut'] ), array( 2, $n, TRUE, array(), 1 ),
     'limits: entries / lines kept, the rest counted' );

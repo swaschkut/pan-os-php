@@ -158,11 +158,13 @@ trait ViewerAppPluginPages
         foreach( $this->q( 'SELECT j.*, c.cid FROM jobs j LEFT JOIN configs c ON c.id = j.config_id WHERE j.project_id = ? ORDER BY j.id DESC LIMIT 1000', array( $p['id'] ) )->fetchAll() as $j )
         {
             $meta = json_decode( (string)( $j['meta'] ?? '' ), TRUE );
-            // a diff run: what it compared (two run results / another version) and its result (PASS / FAIL)
+            // a diff run: what it compared (two run results / another version), its result (PASS / FAIL) and the fingerprint of
+            // its differences; every finished run: the pan-os-php version it ran with
             $out[] = array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'image' => $j['image'] ?? null, 'image_id' => $j['image_id'] ?? null, 'state' => $j['state'],
                 'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null, 'finished' => $j['finished'] !== null ? (int)$j['finished'] : null,
                 'error' => $j['error'], 'playbook' => $meta['playbook'] ?? null, 'then' => $meta['then'] ?? null, 'bp' => $meta['bp'] ?? null )
-                + $this->diffInputs( $p, $j ) + array( 'diff' => $this->diffResult( $p, $j ) ) + $this->jobHas( $p, $j );
+                + $this->diffInputs( $p, $j ) + array( 'diff' => ( $dr = $this->diffResult( $p, $j ) )['result'], 'diff_hash' => $dr['hash'],
+                    'panosphp' => $this->runPanosphpVersion( $p, $j ) ) + $this->jobHas( $p, $j );
         }
         return $out;
     }
