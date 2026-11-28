@@ -1853,6 +1853,49 @@ eq( status( $r ), 400, 'stats compare: the same run twice is refused' );
 eq( array( status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . basename( $drun ) ) ), status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . str_repeat( 'f', 32 ) ) ),
         status( $alice->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare' ) ), status( $bob->call( 'GET', $PB . '/runs/' . $sA . '/stats-compare?other=' . $sB ) ) ),
     array( 409, 404, 404, 404 ), 'stats compare: a run that is not a stats run / unknown / missing / without access to the project' );
+// a playbook run with "then": the steps of a second playbook after the first, in the same run - here the stats and a
+// security profile overview of the result. One run gives the result configuration, its figures and the overview.
+$visFid = $up( $alice, $PB, 'playbook', file_get_contents( $here . '/../utils/api/v1/playbook/visibility.json' ) )[1]['fid'] ?? '';
+$after = $up( $alice, $PB, 'playbook', json_encode( array( 'command' => array(
+    array( 'type' => 'stats', 'location' => 'location=any', 'actions' => 'actions=display-bpa', 'json-to-folder' => 'json-to-folder', 'debugapi' => 'debugapi' ),
+    array( 'type' => 'securityprofile', 'location' => 'location=any', 'actions' => 'actions=exportSPtoHTML:sp.html' ) ) ) ) )[1]['fid'] ?? '';
+eq( array( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $visFid, 'then' => $bpFid ) ) ), status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $visFid, 'then' => str_repeat( 'f', 32 ) ) ) ) ),
+    array( 400, 400 ), 'playbook run with "then": a file that is no playbook / an unknown file is refused' );
+$tr = array();
+foreach( array( basename( $PBC ), $more ) as $i => $cidT )
+{
+    $r = $alice->call( 'POST', $PB . '/configs/' . $cidT . '/playbook/runs', array( 'playbook' => $visFid, 'then' => $after, 'bp' => $bpFid ) );
+    if( $i === 0 )
+        eq( array( status( $r ), $r[1]['args'][0] ?? null ), array( 202, 'json=%JOB%/playbook.json' ), 'playbook run with "then": queued with the joined playbook of the run' );
+    $tr[] = $r[1]['jid'] ?? '';
+}
+$r = waitRun( $alice, $PB . '/runs/' . $tr[0] ); waitRun( $alice, $PB . '/runs/' . $tr[1] );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+$joined = $alice->call( 'GET', $PB . '/runs/' . $tr[0] . '/files/playbook.json' )[1];
+if( is_string( $joined ) )
+    $joined = json_decode( $joined, TRUE );
+$visSteps = count( json_decode( file_get_contents( $here . '/../utils/api/v1/playbook/visibility.json' ), TRUE )['command'] );
+eq( array( $r[1]['state'] ?? null, in_array( 'out.xml', $names, TRUE ), in_array( 'json/debugAPI_string.json', $names, TRUE ), in_array( 'sp.html', $names, TRUE ),
+        count( $joined['command'] ?? array() ), $joined['command'][$visSteps]['type'] ?? null, $r[1]['has_stats'] ?? null, $r[1]['has_result'] ?? null ),
+    array( 'done', TRUE, TRUE, TRUE, $visSteps + 2, 'stats', TRUE, TRUE ), 'playbook run with "then": one run - result configuration, stats of the result, overview; playbook.json = first + second' );
+// the stats compare takes these runs too (a run with a stats result, not only a stats run)
+$r = $alice->call( 'GET', $PB . '/runs/' . $tr[0] . '/stats-compare?other=' . $tr[1] );
+eq( array( status( $r ), $r[1]['a']['type'] ?? null, $r[1]['equal'] ?? null ), array( 200, 'playbook', FALSE ), 'stats compare of two playbook runs with a stats step' );
+$list = array_column( $alice->call( 'GET', $PB . '/runs' )[1]['runs'] ?? array(), null, 'jid' );
+eq( array( $list[$tr[0]]['has_stats'] ?? null, $list[$tr[0]]['has_result'] ?? null, $list[$sA]['has_stats'] ?? null, $list[$sA]['has_result'] ?? null, $list[basename( $drun )]['has_stats'] ?? null ),
+    array( TRUE, TRUE, TRUE, FALSE, FALSE ), 'list of runs: which run has figures (stats compare) / a result configuration (diff of results)' );
+// diff between the result configurations of two runs - no versions are made of them
+$r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0], 'run2' => $tr[1], 'setcommands' => TRUE ) );
+eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 0, 2 ) ), array( 202, array( 'file1=%PROJECT%/jobs/' . $tr[0] . '/out.xml', 'file2=%PROJECT%/jobs/' . $tr[1] . '/out.xml' ) ),
+    'diff of two run results: queued with the result configurations of the two runs' );
+$rd = $PB . '/runs/' . ( $r[1]['jid'] ?? '' );
+$r = waitRun( $alice, $rd );
+$logR = (string)$alice->call( 'GET', $rd . '/files/run.log' )[1];
+eq( array( $r[1]['state'] ?? null, strpos( $logR, 'XPATH: ' ) !== FALSE, strpos( $logR, $data ) ), array( 'done', TRUE, FALSE ), 'diff of two run results: done, the differences in run.log, no path of the server' );
+eq( array( status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0], 'run2' => $tr[0] ) ) ), status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0], 'run2' => $sA ) ) ),
+        status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0] ) ) ), status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[1], 'run2' => $tr[0] ) ) ),
+        status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'run1' => $tr[0], 'run2' => '../../' . $tr[1] ) ) ) ),
+    array( 400, 409, 404, 400, 404 ), 'diff of two run results: the same run twice / a run without a result configuration / one run missing / the version of the request is not the one of run1 / not a run id' );
 eq( array( strpos( $log, 'XPATH: ' ) !== FALSE, (bool)preg_match( '/^\+<ip-netmask>9\.9\.9\.9\/32<\/ip-netmask>/m', $log ) ), array( TRUE, TRUE ), 'diff with set commands: run.log shows the XML differences ( XPATH, + / - ) too' );
 $r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other, 'xpath' => "/config/devices/entry[@name='localhost.localdomain']/device-group", 'noruleordercheck' => TRUE ) );
 eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 2 ) ), array( 202, array( 'noruleordercheck', "filter=/config/devices/entry[@name='localhost.localdomain']/device-group" ) ),

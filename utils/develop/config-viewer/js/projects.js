@@ -289,6 +289,10 @@ async function showProject(pid) {
             el('div', { class: 'row' }, field('Every step its own process (subprocess)', oSub), field('Own process above (memorythreshold, MB)', oThr),
                 field('Memory use in run.log (debugmemory)', oDbg), field('Remove stage files (removestagefiles)', oRm)),
             el('p', { class: 'muted', text: 'subprocess: every step runs as its own PHP process, its memory is free again afterwards - slower, needs least memory. memorythreshold: only steps that start while the run uses more than this many MB run as their own process. The memory a run may use at all is set by the administrator of the computer (VIEWER_RUN_MEMORY).' }));
+        // a second playbook whose steps run after the first, in the same run (e.g. stats and security profile overviews of the result)
+        const rThen = el('select', { title: 'the steps of this playbook run after the first one, in the same run - e.g. the stats and the security profile overviews of the result' },
+            el('option', { value: '', text: '- none -' }), ownPb.map(f => el('option', { value: f.fid, text: f.name })));
+        const thenField = field('Then (second playbook)', rThen);
         // diff: this version (file1, the original) against another one (file2); set commands from file1 to file2
         const dOther = el('select', {}, configs.configs.map(c => el('option', { value: c.cid, text: versionText(c), title: c.note || null })));
         if (configs.configs.length > 1) dOther.value = configs.configs[0].cid;
@@ -323,6 +327,7 @@ async function showProject(pid) {
         const typeChanged = () => {
             const pr = plug.runs[rType.value];
             pbField.hidden = pbOpts.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
+            thenField.hidden = rType.value !== 'playbook' || ownPb.length === 0;
             diffFields.hidden = rType.value !== 'diff';
             imageField.hidden = !runImages.length || (rType.value !== 'stats' && rType.value !== 'playbook');
             pskFields.hidden = rType.value !== 'psk-list';
@@ -353,13 +358,26 @@ async function showProject(pid) {
         // projects the result of a run can go to
         const writable = (await api('GET', 'projects')).projects.filter(x => x.role !== 'read');
         const openFiles = new Set();
+        // diff of the results of two runs: the two runs picked in the list (first picked = file1), in the order they were picked
+        const diffPick = [];
         let refreshRuns = async () => {};
         async function drawRuns() {
             const runs = (await api('GET', base + '/runs')).runs;
             const details = new Map();
             const sensitive = new Map();
             for (const r of runs) if (openFiles.has(r.jid)) { const x = await api('GET', base + '/runs/' + r.jid); details.set(r.jid, x.files); sensitive.set(r.jid, x.sensitive || []); }
-            runsBody.replaceChildren(runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
+            // runs that are gone are not picked any more
+            for (let i = diffPick.length - 1; i >= 0; i--) if (!runs.some(r => r.jid === diffPick[i] && r.has_result)) diffPick.splice(i, 1);
+            const pickLabel = jid => { const r = runs.find(x => x.jid === jid); return r.type + (r.image ? ' (image ' + r.image + ')' : '') + ' ' + fmtTime(r.finished); };
+            const diffBar = canWrite && diffPick.length ? el('p', { class: 'row' },
+                el('span', { class: 'muted', text: 'Diff of two results: file1 = ' + pickLabel(diffPick[0]) + (diffPick[1] ? ', file2 = ' + pickLabel(diffPick[1]) : ' - pick a second run') }),
+                diffPick.length === 2 ? el('button', { type: 'button', class: 'primary', text: 'Start diff', onclick: () => run(async () => {
+                    const r1 = runs.find(x => x.jid === diffPick[0]);
+                    await api('POST', base + '/configs/' + r1.cid + '/diff/runs', { run1: diffPick[0], run2: diffPick[1], setcommands: true });
+                    diffPick.length = 0; message('run queued'); await drawRuns();
+                }) }) : null,
+                el('button', { type: 'button', text: 'Clear', onclick: () => run(async () => { diffPick.length = 0; await drawRuns(); }) })) : null;
+            runsBody.replaceChildren(...(diffBar ? [diffBar] : []), runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
                     const row = el('tr', {}, el('td', { text: r.type + (r.image ? ' (image ' + r.image + ')' : ''), title: r.image ? 'run with the pan-os-php image "' + r.image + '" of this installation' : null }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
@@ -378,8 +396,16 @@ async function showProject(pid) {
                                 await drawRuns();
                             }) }), ' ',
                             // the figures of this stats run compared with another one (e.g. the same playbook with two images)
-                            r.type === 'stats' && r.state === 'done' && runs.filter(x => x.type === 'stats' && x.state === 'done').length > 1
-                                ? [el('a', { class: 'button', href: statsCompareLink(pid, r.jid), target: '_blank', rel: 'noopener', title: 'compare the figures of this stats run with another one, in a new tab', text: 'Compare stats' }), ' '] : null,
+                            // the result configuration of this run in a diff with the one of another run (pick two)
+                            canWrite && r.has_result && r.cid && runs.filter(x => x.has_result).length > 1
+                                ? [el('button', { type: 'button', class: diffPick.includes(r.jid) ? 'primary' : null, title: 'diff between the result configurations of two runs: pick two runs (the first is file1)',
+                                    text: diffPick.includes(r.jid) ? 'Picked for diff (' + (diffPick.indexOf(r.jid) + 1) + ')' : 'Diff result', onclick: () => run(async () => {
+                                        const i = diffPick.indexOf(r.jid);
+                                        if (i >= 0) diffPick.splice(i, 1); else { if (diffPick.length === 2) diffPick.shift(); diffPick.push(r.jid); }
+                                        await drawRuns();
+                                    }) }), ' '] : null,
+                            r.has_stats && runs.filter(x => x.has_stats).length > 1
+                                ? [el('a', { class: 'button', href: statsCompareLink(pid, r.jid), target: '_blank', rel: 'noopener', title: 'compare the figures of this run with another one, in a new tab', text: 'Compare stats' }), ' '] : null,
                             canWrite && (r.type === 'playbook' || r.type === 'object-merger' || r.type === 'rule-merger' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
                                 const to = ev.target.parentNode.querySelector('select').value;
                                 await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
@@ -422,6 +448,7 @@ async function showProject(pid) {
                 if (rType.value === 'playbook') {
                     if (!rPlaybook.value) throw new Error('choose a playbook (upload one under "Project files")');
                     if (rPlaybook.value.startsWith('predefined:')) body.predefined = rPlaybook.value.slice(11); else body.playbook = rPlaybook.value;
+                    if (rThen.value) body.then = rThen.value;
                     if (oSub.checked) body.subprocess = true;
                     if (oThr.value) body.memorythreshold = oThr.value;
                     if (oDbg.checked) body.debugmemory = true;
@@ -459,7 +486,7 @@ async function showProject(pid) {
                 await api('POST', base + (noVersion ? '' : '/configs/' + rVersion.value) + '/' + rType.value + '/runs', body);
                 message('run queued');
                 await refreshRuns();
-            }); } }, field('Run', rType), versionField, diffFields, pskFields, pbField, locField, plugFields, bpField, imageField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
+            }); } }, field('Run', rType), versionField, diffFields, pskFields, pbField, thenField, locField, plugFields, bpField, imageField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
             runsBody);
         // while a run is open: refresh the list
         let openRuns = await drawRuns();

@@ -316,10 +316,26 @@ trait ViewerAppJobs
         {
             // two versions of the project: this one (file1, the original) and 'other' (file2, the newer one); no in= -
             // with in= type=diff compares inside one file. Set commands from file1 to file2 on request.
-            $other = $this->configGet( $p, $in['other'] ?? null );
-            if( (int)$other['id'] === (int)$c['id'] )
-                throw new ViewerException( 'diff: choose two different versions', 400 );
-            $args = array( 'file1=%PROJECT%/' . $c['file'], 'file2=%PROJECT%/' . $other['file'] );
+            // … or the result configurations of two finished runs of the project (run1 = file1, run2 = file2), e.g. the
+            // same playbook on the same version with two pan-os-php images - without making versions of the results.
+            // The version of the request is the one run1 ran on.
+            if( isset( $in['run1'] ) || isset( $in['run2'] ) )
+            {
+                $r1 = $this->jobResultArg( $p, $in['run1'] ?? null, 'run1' );
+                $r2 = $this->jobResultArg( $p, $in['run2'] ?? null, 'run2' );
+                if( $r1['job']['jid'] === $r2['job']['jid'] )
+                    throw new ViewerException( 'diff: choose two different runs', 400 );
+                if( (int)$r1['job']['config_id'] !== (int)$c['id'] )
+                    throw new ViewerException( 'diff: the version of the request is the one run1 ran on', 400 );
+                $args = array( 'file1=' . $r1['arg'], 'file2=' . $r2['arg'] );
+            }
+            else
+            {
+                $other = $this->configGet( $p, $in['other'] ?? null );
+                if( (int)$other['id'] === (int)$c['id'] )
+                    throw new ViewerException( 'diff: choose two different versions', 400 );
+                $args = array( 'file1=%PROJECT%/' . $c['file'], 'file2=%PROJECT%/' . $other['file'] );
+            }
             // with outputformatset type=diff prints only the set commands - display-xpath-and-xmlnode keeps the XML
             // differences ( XPATH + / - ) in run.log as well, as without set commands
             if( !empty( $in['setcommands'] ) )
@@ -358,6 +374,21 @@ trait ViewerAppJobs
                 $pb = $this->fileGet( $p, $in['playbook'] ?? null, 'playbook' );
                 $this->playbookCheck( json_decode( (string)file_get_contents( $pb['path'] ), TRUE ) );
                 $json = 'json=%FILES%/' . $pb['file'];
+            }
+            // "then": a second playbook file of the project whose steps run after the first, in the same run (e.g. the
+            // stats and the security profile overviews of the result). Both are checked; the run gets one playbook -
+            // the first with the steps of the second appended - written into its folder when it is queued (playbook.json)
+            $then = $in['then'] ?? null;
+            if( $then !== null && $then !== '' )
+            {
+                $tf = $this->fileGet( $p, $then, 'playbook' );
+                $tj = json_decode( (string)file_get_contents( $tf['path'] ), TRUE );
+                $this->playbookCheck( $tj );
+                $fj = json_decode( (string)file_get_contents( isset( $pb ) ? $pb['path'] : $this->playbookDir() . '/' . $predefined ), TRUE );
+                $fj['command'] = array_merge( array_values( $fj['command'] ), array_values( $tj['command'] ) );
+                $this->playbookCheck( $fj );
+                $playbookJoined = json_encode( $fj, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+                $json = 'json=%JOB%/playbook.json';
             }
             $args = array_merge( array( $json, 'out=%JOB%/out.xml', 'stagename=stage/step-', 'outputformatset=set-commands.txt' ), self::playbookOptions( $in ) );
         }
@@ -403,6 +434,14 @@ trait ViewerAppJobs
         // a support file: what goes in is put next to the run now (hidden folder .support of the run)
         if( $type === 'support-file' )
             $args = $this->supportStage( $user, $p, $c, $jid, $in );
+        // a playbook run with "then": the joined playbook is a file of the run
+        if( isset( $playbookJoined ) )
+        {
+            $dir = $this->jobDir( $p, $jid );
+            if( ( !is_dir( $dir ) && !@mkdir( $dir, 0700, TRUE ) ) || file_put_contents( $dir . '/playbook.json', $playbookJoined ) === FALSE )
+                throw new ViewerException( 'the playbook of the run can not be stored', 500 );
+            @chmod( $dir . '/playbook.json', 0600 );
+        }
         $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created, image) VALUES (?,?,?,?,?,?,?,?,?)',
             array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time(), ( $image ?? '' ) !== '' ? $image : null ) );
         return $this->jobGet( $user, $pid, $jid );
@@ -686,7 +725,36 @@ trait ViewerAppJobs
         self::needUnlimited( $p, 'the list of runs' );
         $rows = $this->q( 'SELECT j.*, u.name AS user, c.cid FROM jobs j LEFT JOIN users u ON u.id = j.user_id LEFT JOIN configs c ON c.id = j.config_id
             WHERE j.project_id = ? ORDER BY j.id DESC LIMIT 200', array( $p['id'] ) )->fetchAll();
-        return array_map( array( 'ViewerApp', 'jobPublic' ), $rows );
+        // has_stats: the run has figures to compare (stats compare) - a stats run, or a playbook run with a stats step;
+        // has_result: it has a result configuration (a diff between the results of two runs)
+        return array_map( function( $j ) use ( $p ) { return self::jobPublic( $j ) + $this->jobHas( $p, $j ); }, $rows );
+    }
+
+    /** what a finished run has for the compares: a stats result, a result configuration */
+    private function jobHas( array $p, array $j ): array
+    {
+        if( $j['state'] !== 'done' )
+            return array( 'has_stats' => FALSE, 'has_result' => FALSE );
+        $dir = $this->jobDir( $p, $j['jid'] );
+        $result = $this->jobResultName( $j );
+        return array( 'has_stats' => is_file( $dir . '/' . self::STATS_RESULT_FILE ), 'has_result' => $result !== null && is_file( $dir . '/' . $result ) );
+    }
+
+    /** the name of the result configuration of a run type (playbook runs write out.xml; a run type of a plug-in names its own); null: none */
+    private function jobResultName( array $j ): ?string
+    {
+        return in_array( $j['type'], array( 'playbook', 'ldap-users', 'object-merger', 'rule-merger' ), TRUE ) ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
+    }
+
+    /** a finished run of the project with a result configuration: its file as a run sees it ( %PROJECT%/jobs/<run>/<file> ) */
+    private function jobResultArg( array $p, $jid, string $what ): array
+    {
+        $j = $this->jobRow( $p, $jid );
+        $result = $this->jobResultName( $j );
+        $file = $this->jobDir( $p, $j['jid'] ) . '/' . ( $result ?? 'out.xml' );
+        if( $j['state'] !== 'done' || $result === null || !is_file( $file ) || is_link( $file ) || !self::isPanosConfig( $file ) )
+            throw new ViewerException( 'diff: ' . $what . ' - a finished run of this project with a result configuration', 409 );
+        return array( 'job' => $j, 'arg' => '%PROJECT%/jobs/' . $j['jid'] . '/' . $result );
     }
 
     public function jobGet( array $user, $pid, $jid ): array
@@ -695,7 +763,7 @@ trait ViewerAppJobs
         self::needUnlimited( $p, 'a run' );
         $j = $this->jobRow( $p, $jid );
         $done = in_array( $j['state'], array( 'done', 'failed' ), TRUE );
-        return self::jobPublic( $j ) + array( 'files' => $done ? $this->jobFiles( $p, $j['jid'] ) : array(),
+        return self::jobPublic( $j ) + $this->jobHas( $p, $j ) + array( 'files' => $done ? $this->jobFiles( $p, $j['jid'] ) : array(),
             // sensitive results: downloadable once by write members (not with a token)
             'sensitive' => $done && $p['role'] !== 'read' && !isset( $user['token'] ) ? $this->sensitiveFiles( $p, $j ) : array() );
     }
@@ -726,8 +794,9 @@ trait ViewerAppJobs
     private function statsRun( array $p, $jid ): array
     {
         $j = $this->jobRow( $p, $jid );
-        if( $j['type'] !== 'stats' || $j['state'] !== 'done' )
-            throw new ViewerException( 'stats compare: a finished stats run', 409 );
+        // a stats run, or a run that made the stats on the way (a playbook with a stats step: the figures of its result)
+        if( $j['state'] !== 'done' )
+            throw new ViewerException( 'stats compare: a finished run with a stats result', 409 );
         $c = $j['config_id'] !== null ? $this->q( 'SELECT name, note FROM configs WHERE id = ?', array( $j['config_id'] ) )->fetch() : FALSE;
         $file = $this->jobDir( $p, $j['jid'] ) . '/' . self::STATS_RESULT_FILE;
         if( !is_file( $file ) || is_link( $file ) || filesize( $file ) > self::JOB_FILE_MAX )

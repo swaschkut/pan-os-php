@@ -505,7 +505,13 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 | `PANOSPHP_VIEWER_CONTAINER_DNS` | DNS servers (IP addresses, `,` separated) of a run step with network - for internal names (AD domain controllers, firewalls); compose: `VIEWER_RUN_DNS` in `.env`; empty: the runtime decides (Docker: the resolver of the host, or public ones when the host has only a local one) |
 | `PANOSPHP_VIEWER_CONTAINER_USER` | `uid:gid` in the container (default: the one of the job runner, so that it can read the result files) |
 
-**Stats compare.** "Compare stats" at a finished stats run (list of runs, when the project has two of them) opens a
+**One run per configuration and image.** A playbook run can take a second playbook ("Then"): its steps run after the
+first in the same run - e.g. `visibility.json`, then a playbook with a stats step (`json-to-folder`, `debugapi`) and
+the security profile exports. The run then has the result configuration, the figures of the result and the overviews.
+"Diff result" at two runs of the list compares their result configurations (no versions needed); "Compare stats"
+compares their figures.
+
+**Stats compare.** "Compare stats" at a finished run with a stats result (list of runs, when the project has two of them) opens a
 tab that compares the figures of two stats runs: per statistics block what differs (A, B, B - A), and folded what only
 one of them has. The lists name each run by its version with the note of the version (which run / pan-os-php image
 made it). A card "Visibility not 100 %" lists the components that are not 100 % in one of the two runs, with the value

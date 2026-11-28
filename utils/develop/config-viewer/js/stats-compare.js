@@ -15,20 +15,21 @@ async function showStatsCompare(pid, jidA, jidB) {
     const base = 'projects/' + encodeURIComponent(pid);
     const p = await api('GET', base);
     const [runs, configs] = await Promise.all([api('GET', base + '/runs'), api('GET', base + '/configs')]);
-    const stats = (runs.runs || []).filter(r => r.type === 'stats' && r.state === 'done');
+    // every finished run with figures: a stats run, or a playbook run with a stats step (the figures of its result)
+    const stats = (runs.runs || []).filter(r => r.has_stats);
     document.title = 'Stats compare - ' + p.name;
     const main = document.getElementById('main');
     const head = el('div', { class: 'card' }, el('h2', { text: 'Stats compare' }),
-        el('p', { class: 'muted', text: 'Project ' + p.name + ' - the figures of two finished stats runs: what differs, and what exists in one of them only.' }));
+        el('p', { class: 'muted', text: 'Project ' + p.name + ' - the figures of two finished runs with a stats result: what differs, and what exists in one of them only.' }));
     if (stats.length < 2) {
-        head.append(el('p', { text: 'Two finished stats runs are needed (Runs: stats).' }));
+        head.append(el('p', { text: 'Two finished runs with a stats result are needed (Runs: stats, or a playbook with a stats step).' }));
         main.replaceChildren(head);
         return;
     }
     // a run in the lists: its version with the note (which run / image made that version), the image and the time of the stats run
     const label = r => {
         const c = configs.configs.find(x => x.cid === r.cid);
-        return (c ? c.name + (c.note ? ' - ' + c.note : '') : '(deleted version)') + '  |  stats' + (r.image ? ' with image ' + r.image : '') + ' ' + fmtTime(r.finished || r.created);
+        return (c ? c.name + (c.note ? ' - ' + c.note : '') : '(deleted version)') + '  |  ' + r.type + (r.image ? ' with image ' + r.image : '') + ' ' + fmtTime(r.finished || r.created);
     };
     const options = sel => stats.map(r => { const o = el('option', { value: r.jid, text: label(r) }); o.selected = r.jid === sel; return o; });
     if (!stats.some(r => r.jid === jidA)) jidA = stats[0].jid;

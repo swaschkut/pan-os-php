@@ -423,6 +423,14 @@ $r2 = call( 'POST', $P . '/runs/' . $jid2 . '/save' );
 eq( $r2[0], 201, 'playbook run: result taken as a new version' );
 $noteViewer = current( array_filter( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), function( $x ) use ( $r2 ) { return $x['cid'] === ( $r2[1]['cid'] ?? '' ); } ) )['note'] ?? null;
 eq( $noteViewer, 'playbook run ' . substr( $jid2, 0, 8 ) . ', image of the viewer', 'result as new version, run without a name: "image of the viewer" (the installation lists images)' );
+// diff between the result configurations of the two playbook runs (beta / image of the viewer): in the container the
+// results are files of the read-only project folder ( /project/jobs/<run>/out.xml )
+$r = call( 'POST', $P . '/configs/' . $cid . '/diff/runs', array( 'run1' => $jidP, 'run2' => $jid2 ) );
+$jidD = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $jidD );
+$c = array_values( array_filter( calls(), function( $c ) use ( $jidD ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidD, $c, TRUE ); } ) )[0] ?? array();
+eq( array( $r[1]['state'] ?? null, in_array( 'file1=/project/jobs/' . $jidP . '/out.xml', $c, TRUE ), in_array( 'file2=/project/jobs/' . $jid2 . '/out.xml', $c, TRUE ), count( preg_grep( '/^in=/', $c ) ) ),
+    array( 'done', TRUE, TRUE, 0 ), 'diff of two run results in the "container": done, file1 / file2 are the results under /project/jobs, no in=' );
 
 // playbook options for large configurations go to type=playbook; a run killed for memory is told apart
 $r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'subprocess' => TRUE, 'memorythreshold' => '512', 'debugmemory' => TRUE, 'removestagefiles' => TRUE ) );

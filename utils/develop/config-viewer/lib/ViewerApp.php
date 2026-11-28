@@ -1565,7 +1565,7 @@ class ViewerApp
             self::needUnlimited( $target, 'a new version' );
         }
         // playbook runs write out.xml; a run type of a plug-in names its result configuration
-        $result = in_array( $j['type'], array( 'playbook', 'ldap-users', 'object-merger', 'rule-merger' ), TRUE ) ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
+        $result = $this->jobResultName( $j );
         $out = $this->jobDir( $p, $j['jid'] ) . '/' . ( $result ?? 'out.xml' );
         if( $j['state'] !== 'done' || $result === null || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
             throw new ViewerException( 'this run has no result configuration', 409 );
@@ -1964,8 +1964,9 @@ class ViewerApp
                 return $this->runnerTake();
             }
             // %PROJECT%: a version of this project (type=diff) - only <32 hex>.xml, and it must still exist; the approved plan
-            // of a plug-in run (plugin-pages/<page>/approved/<32 hex>.json)
-            if( strpos( $a, '%PROJECT%' ) !== FALSE && ( !preg_match( '#^[a-z0-9-]+=%PROJECT%/((?:plugin-pages/[a-z][a-z0-9-]{0,62}/approved/)?[0-9a-f]{32}\.(?:xml|json))$#', $a, $m )
+            // of a plug-in run (plugin-pages/<page>/approved/<32 hex>.json); the result configuration of another run of
+            // the project (type=diff of two run results: jobs/<32 hex>/<name>.xml)
+            if( strpos( $a, '%PROJECT%' ) !== FALSE && ( !preg_match( '#^[a-z0-9-]+=%PROJECT%/((?:plugin-pages/[a-z][a-z0-9-]{0,62}/approved/)?[0-9a-f]{32}\.(?:xml|json)|jobs/[0-9a-f]{32}/[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.xml)$#', $a, $m )
                 || ( substr( $m[1], -5 ) === '.json' && strpos( $m[1], 'plugin-pages/' ) !== 0 ) || !is_file( $dir . '/' . $m[1] ) ) )
             {
                 $this->runnerFinish( (int)$j['id'], 'failed', 'a version of the run does not exist any more' );
