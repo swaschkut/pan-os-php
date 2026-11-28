@@ -518,15 +518,24 @@ async function showProject(pid) {
     const scmCard = !limited && !(p.binding && p.binding.kind === 'panos') ? await scmTab(base, pid, canWrite, p) : null;
     const supportCardEl = canWrite && !limited && configs.configs.length ? await supportCard(base, configs.configs) : null;
 
-    // pages of plug-ins (interface 2): one card per page, drawn from the description the server gives
-    const pageCards = limited ? [] : Object.entries(plug.pages || {})
-        .filter(([k, pg]) => !pg.types || pg.types.length === 0 || (p.type && pg.types.includes(p.type.key)))
-        .map(([k, pg]) => pluginPageCard(base, k, pg));
-    // approvals of plug-in pages: the owner decides whether the person who made a plan may approve it (four eyes)
-    if (pageCards.length && owner) {
+    // pages of plug-ins (interface 2): one card per page, drawn from the description the server gives - a tab per plug-in
+    // (its title), with the pages of that plug-in
+    const pagesByPlugin = new Map();
+    if (!limited) for (const [k, pg] of Object.entries(plug.pages || {})) {
+        if (pg.types && pg.types.length && !(p.type && pg.types.includes(p.type.key))) continue;
+        if (!pagesByPlugin.has(pg.plugin)) pagesByPlugin.set(pg.plugin, []);
+        pagesByPlugin.get(pg.plugin).push(pluginPageCard(base, k, pg));
+    }
+    const pluginTabs = [...pagesByPlugin].map(([name, cards]) => ['plugin-' + name, ((plug.plugins || []).find(x => x.name === name) || {}).title || name, cards]);
+    // a place saved before the tabs per plug-in (#…&tab=plugin-pages): the first plug-in
+    if (state.projectTab && state.projectTab[pid] === 'plugin-pages' && pluginTabs.length) state.projectTab[pid] = pluginTabs[0][0];
+    // approvals of plug-in pages: the owner decides whether the person who made a plan may approve it (four eyes) - a
+    // setting of the project about people: with the members
+    let fourEyesCard = null;
+    if (pluginTabs.length && owner) {
         const fe = el('input', { type: 'checkbox' }); fe.checked = !!p.four_eyes;
         fe.addEventListener('change', () => run(async () => { await api('PUT', base + '/approvals', { four_eyes: fe.checked }); await showProject(pid); }));
-        pageCards.unshift(el('div', { class: 'card' }, el('label', { class: 'chk' }, fe, ' Approvals: four eyes - an area of a plan is approved by another person than the one who made the plan')));
+        fourEyesCard = el('div', { class: 'card' }, el('label', { class: 'chk' }, fe, ' Approvals of plug-in pages: four eyes - an area of a plan is approved by another person than the one who made the plan'));
     }
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
@@ -555,9 +564,9 @@ async function showProject(pid) {
             mergerCard ? ['merger', 'Config merger', [mergerCard]] : null,
             scmCard ? ['scm', 'SCM', [scmCard]] : null,
             ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
-            pageCards.length ? ['plugin-pages', 'Plug-ins', pageCards] : null,
+            ...pluginTabs,
             supportCardEl ? ['support', 'Support file', [supportCardEl]] : null,
-            ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
+            ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, fourEyesCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now
     if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
 }

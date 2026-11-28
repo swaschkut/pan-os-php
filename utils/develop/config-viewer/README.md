@@ -608,7 +608,8 @@ The compose file mounts it read-only into web, service and job runner (`/plugins
 
 ### Interface 2: pages (data driven)
 
-A plug-in with `'api' => 2` can describe **pages**: a card per page in the project tab "Plug-ins". The viewer draws
+A plug-in with `'api' => 2` can describe **pages**: a card per page in a project tab of its own (the title of the
+plug-in, e.g. "Release validation"; the setting "four eyes" of approvals is in the tab of the members). The viewer draws
 them from the description - a plug-in brings no script for the page. Plug-ins of interface 1 keep working.
 
 ```php
