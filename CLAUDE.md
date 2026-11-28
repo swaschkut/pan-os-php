@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Working rules (all pan-os-php repositories)
 
 These rules apply to every repository of this project: `pan-os-php` (public), `pan-os-php_scm-migration`,
-`pan-os-php_migration`, `pan-os-php_license` (private).
+`pan-os-php_migration`, `pan-os-php_license`, `pan-os-php_validation` (private).
 
 ### Delivery: patch files only
 
@@ -26,7 +26,7 @@ These rules apply to every repository of this project: `pan-os-php` (public), `p
 - Every delivered patch file is kept unchanged (never overwritten) for the rest of the work, so the next patch can be
   built against it.
 - Branches: `pan-os-php` → **alpha** (fetch dev and beta as well; fixes for dev / beta only when asked).
-  `pan-os-php_scm-migration`, `pan-os-php_migration`, `pan-os-php_license` → **main**.
+  `pan-os-php_scm-migration`, `pan-os-php_migration`, `pan-os-php_license`, `pan-os-php_validation` → **main**.
 - "nur beantworten" / "nicht arbeiten" / "erst darüber reden": answer only, no code, no patch.
 
 ### Language
