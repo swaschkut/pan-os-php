@@ -625,7 +625,7 @@ them from the description - a plug-in brings no script for the page. Plug-ins of
 | `select` (`options` value => label), `bool` | string / true, false |
 | `list` (`item`: text, ipv4, ipv4-cidr, ipv6-cidr, hostname; at most 500) | list of strings |
 | `file` (`kind`: playbook, bp) - a project file of that kind; the form offers the files of the project | file id |
-| `images` - pan-os-php images of the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`) and `@viewer` (the image of the viewer) | list of names |
+| `images` - pan-os-php images of the installation (`PANOSPHP_VIEWER_CONTAINER_IMAGES`) and `@viewer` (the image of the viewer), a check box each | list of names |
 
 **Matrix blocks** - read only: rows x columns, a state per cell, drawn by the viewer (e.g. configurations x pan-os-php
 images of a release validation):

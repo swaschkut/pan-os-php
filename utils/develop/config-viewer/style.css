@@ -53,6 +53,8 @@ pre.log { max-height: 240px; overflow: auto; background: var(--bg); border: 1px 
 .filelink .filedl { margin-left: 6px; font-size: 12px; }
 /* matrix of a plug-in: the files of the run of a cell below its state */
 table.matrix td { white-space: normal; max-width: 260px; }
+.imagechecks { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; font-weight: normal; }
+.imagechecks .imagecheck { cursor: pointer; }
 .matrixfiles a { display: inline-block; margin: 3px 8px 0 0; font-size: 12px; }
 /* stats compare: what exists in one run only, folded */
 details.statsonly { margin-top: 10px; }

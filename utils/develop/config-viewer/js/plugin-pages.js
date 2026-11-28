@@ -63,10 +63,15 @@ function pluginInput(f, v, inTable) {
         input = el('select', {}, f.required && f.type === 'select' ? null : el('option', { value: '', text: f.type === 'file' ? '- choose a file -' : '-' }),
             Object.entries(f.options || {}).map(([o, label]) => { const x = el('option', { value: o, text: label }); x.selected = o === v; return x; }));
     } else if (f.type === 'images') {
-        // pan-os-php images of the installation (VIEWER_RUN_IMAGES) and the one of the viewer: one or more
-        const opts = Object.entries(f.options || {});
-        input = el('select', { multiple: true, size: Math.min(8, Math.max(2, opts.length)) },
-            opts.map(([o, label]) => { const x = el('option', { value: o, text: label }); x.selected = Array.isArray(v) && v.includes(o); return x; }));
+        // pan-os-php images of the installation (VIEWER_RUN_IMAGES) and the one of the viewer: one or more - a check box
+        // each (a list with several selected entries is easily read as "one chosen"). The field sits in a <label>: a
+        // click on the text of an entry toggles that entry, not the first box of the label
+        const boxes = Object.entries(f.options || {}).map(([o, label]) => {
+            const box = el('input', { type: 'checkbox', value: o }); box.checked = Array.isArray(v) && v.includes(o);
+            return el('span', { class: 'imagecheck', onclick: e => { if (e.target !== box) { e.preventDefault(); if (!box.disabled) box.checked = !box.checked; } } }, box, ' ', label);
+        });
+        input = el('div', { class: 'imagechecks' }, boxes);
+        Object.defineProperty(input, 'disabled', { set: x => boxes.forEach(b => { b.firstChild.disabled = x; }) });
     } else if (f.type === 'bool') {
         input = el('input', { type: 'checkbox' }); input.checked = v === true;
     } else if (f.type === 'list' && !inTable) {
@@ -77,7 +82,7 @@ function pluginInput(f, v, inTable) {
         input.value = v === null || v === undefined ? '' : Array.isArray(v) ? v.join(', ') : String(v);
     }
     input.valueOf2 = () => f.type === 'bool' ? input.checked
-        : f.type === 'images' ? [...input.selectedOptions].map(o => o.value)
+        : f.type === 'images' ? [...input.querySelectorAll('input:checked')].map(x => x.value)
         : f.type === 'list' ? input.value.split(inTable ? ',' : '\n').map(x => x.trim()).filter(x => x !== '') : input.value;
     return input;
 }
