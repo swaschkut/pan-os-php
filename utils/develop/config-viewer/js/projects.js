@@ -382,7 +382,7 @@ async function showProject(pid) {
                 el('button', { type: 'button', text: 'Clear', onclick: () => run(async () => { diffPick.length = 0; await drawRuns(); }) })) : null;
             runsBody.replaceChildren(...(diffBar ? [diffBar] : []), runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
-                    const open = r.state === 'queued' || r.state === 'running';
+                    const open = r.state === 'waiting' || r.state === 'queued' || r.state === 'running';
                     const row = el('tr', {}, el('td', { text: r.type + (r.image ? ' (image ' + r.image + ')' : ''), title: r.image ? 'run with the pan-os-php image "' + r.image + '" of this installation' : null }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
                             : r.type === 'ldap-discover' ? 'LDAP servers of ' + ((r.args || []).find(a => a.startsWith('x-ldap-discover-target=')) || '').slice(23)
                             : r.type === 'ldap' ? 'LDAP ' + ((r.args || []).find(a => a.startsWith('x-ldap-target=')) || '').slice(14).replace(/^auto:/, 'automatic: ')
@@ -408,6 +408,9 @@ async function showProject(pid) {
                                         if (i >= 0) diffPick.splice(i, 1); else { if (diffPick.length === 2) diffPick.shift(); diffPick.push(r.jid); }
                                         await drawRuns();
                                     }) }), ' '] : null,
+                            // the differences of a diff run by object, in a new tab
+                            r.type === 'diff' && (r.state === 'done' || r.state === 'failed')
+                                ? [el('a', { class: 'button', href: diffViewLink(pid, r.jid), target: '_blank', rel: 'noopener', title: 'the differences by object, in a new tab', text: 'Diff view' }), ' '] : null,
                             r.has_stats && runs.filter(x => x.has_stats).length > 1
                                 ? [el('a', { class: 'button', href: statsCompareLink(pid, r.jid), target: '_blank', rel: 'noopener', title: 'compare the figures of this run with another one, in a new tab', text: 'Compare stats' }), ' '] : null,
                             // the result configuration as a new version: once per run in this project (r.saved - again when that
@@ -447,7 +450,7 @@ async function showProject(pid) {
                                 el('span', { class: 'muted', text: ' ' + fmtSize(f.size) }),
                                 runFileIsText(f.name) ? el('a', { class: 'filedl', href: dl, title: 'download ' + f.name, text: 'download' }) : null); }))) ];
                 })));
-            return runs.some(r => r.state === 'queued' || r.state === 'running');
+            return runs.some(r => r.state === 'waiting' || r.state === 'queued' || r.state === 'running');
         }
         runsCard = el('div', { class: 'card' }, el('h2', { text: 'Runs' }),
             el('p', { class: 'muted', text: 'A run works on one version in its own folder; exports, set commands and the result configuration are its result files. Nothing changes a version - the result of a playbook run can be taken as a new version. diff compares two versions: the differences are in run.log, the set commands (file1 → file2) in set-commands.txt.' }),

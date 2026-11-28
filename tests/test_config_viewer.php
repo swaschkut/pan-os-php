@@ -110,7 +110,10 @@ file_put_contents( $plugins . '/mx/plugin.php', <<<'MX'
                         $out['cells'][$row['key']][$col['key']] = array( 'state' => 'none', 'action' => array( 'label' => 'start', 'run' => $run ) );
                         $missing[] = $run;
                     }
-            $out['actions'] = array( array( 'name' => 'missing', 'label' => 'Start what is missing', 'runs' => $missing ),
+            $all = array();
+            foreach( $out['rows'] as $row )
+                $all[] = array( 'type' => 'stats', 'cid' => $row['key'], 'values' => array() );
+            $out['actions'] = array( array( 'name' => 'missing', 'label' => 'Start what is missing', 'runs' => $missing ), array( 'name' => 'stats', 'label' => 'Stats of all', 'runs' => $all ),
                 array( 'name' => 'bad', 'label' => 'Not allowed', 'runs' => array( array( 'type' => 'import', 'cid' => $out['rows'][0]['key'] ?? null, 'values' => array() ),
                     array( 'type' => '../x', 'values' => array() ) ) ),
                 array( 'name' => 'Bad Name', 'runs' => array() ) );
@@ -1669,7 +1672,7 @@ function waitRun( $client, $path )
     for( $i = 0; $i < 600; $i++ )
     {
         $r = $client->call( 'GET', $path );
-        if( !in_array( $r[1]['state'] ?? '', array( 'queued', 'running' ), TRUE ) )
+        if( !in_array( $r[1]['state'] ?? '', array( 'waiting', 'queued', 'running' ), TRUE ) )
             return $r;
         usleep( 200000 );
     }
@@ -2027,7 +2030,7 @@ foreach( $grid['rows'] ?? array() as $row )
         if( $open === null && ( $c['action'] ?? null ) === 'start' )
             $open = array( 'row' => $row['key'], 'column' => $grid['columns'][$i]['key'] );
 eq( array( array_keys( $acts ), ( $acts['missing'] ?? 0 ) >= 1, $acts['bad'] ?? null, $open !== null, array_key_exists( 'action', $c0[0] ?? array() ) ? $c0[0]['action'] : 'missing' ),
-    array( array( 'missing', 'bad' ), TRUE, 1, TRUE, null ),
+    array( array( 'missing', 'stats', 'bad' ), TRUE, 1, TRUE, null ),
     'plug-in matrix: actions with the number of runs they start (an invalid run / name left out), a cell without a run has "start"' );
 $r = $alice->call( 'POST', $MX . '/blocks/grid/run', $open ?? array() );
 $started = $r[1]['started'] ?? array();
@@ -2043,6 +2046,46 @@ eq( array( status( $r2 ), status( $rb2 ), $rb2[1]['started'] ?? null, $rb2[1]['n
         status( $alice->call( 'POST', $MX . '/blocks/grid/run', array( 'row' => 'injected', 'column' => 'x' ) ) ), status( $bob->call( 'POST', $MX . '/blocks/grid/run', array( 'action' => 'missing' ) ) ) ),
     array( 409, 200, array(), 1, 1, 404, 404, 409, 404 ),
     'plug-in matrix: a cell that has its run now offers nothing (409); a run the viewer refuses is reported, not started; unknown action / no matrix / a cell the plug-in did not list / no access are refused' );
+// a full queue: the runs of a matrix wait (checked now) and start by themselves when there is room; a run from the list
+// of runs is still refused
+$pdo = new PDO( 'sqlite:' . $data . '/viewer.sqlite' );
+$prow = $pdo->query( "SELECT id FROM projects WHERE pid = '" . basename( $PB ) . "'" )->fetch();
+$fill = array();
+for( $i = 0; $i < 20; $i++ )
+{
+    $fill[] = $fj = bin2hex( random_bytes( 16 ) );
+    $pdo->prepare( "INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created) VALUES (?, ?, 0, 1, 'stats', '[]', 'running', ?)" )->execute( array( $fj, $prow['id'], time() ) );
+}
+$rw = $alice->call( 'POST', $MX . '/blocks/grid/run', array( 'action' => 'stats' ) );
+$w = $rw[1]['started'] ?? array();
+$ws = array_map( function( $j ) use ( $alice, $PB ) { return $alice->call( 'GET', $PB . '/runs/' . $j )[1]['state'] ?? null; }, $w );
+eq( array( status( $rw ), count( $w ) >= 2, $rw[1]['waiting'] ?? null, array_unique( $ws ), status( $alice->call( 'POST', $PBC . '/stats/runs', array() ) ) ),
+    array( 202, TRUE, count( $w ), array( 'waiting' ), 429 ),
+    'full queue: the runs of a matrix action wait (state waiting); a run from the list of runs is refused (429)' );
+$pdo->exec( "UPDATE jobs SET state = 'failed', finished = " . time() . " WHERE jid IN ('" . implode( "','", $fill ) . "')" );
+$done = array_map( function( $j ) use ( $alice, $PB ) { return waitRun( $alice, $PB . '/runs/' . $j )[1]['state'] ?? null; }, $w );
+eq( array_unique( $done ), array( 'done' ), 'full queue: the waiting runs are queued by the job runner when there is room, and run' );
+$r = $alice->call( 'POST', $MX . '/blocks/grid/run', array( 'action' => 'stats' ) );
+$cw = $r[1]['started'][0] ?? 'x';
+$pdo->exec( "UPDATE jobs SET state = 'waiting' WHERE jid = '" . $cw . "' AND state = 'queued'" );
+$alice->call( 'DELETE', $PB . '/runs/' . $cw );
+eq( $alice->call( 'GET', $PB . '/runs/' . $cw )[1]['state'] ?? null, 'cancelled', 'a waiting run can be cancelled' );
+foreach( $r[1]['started'] ?? array() as $j )
+    waitRun( $alice, $PB . '/runs/' . $j );
+// the diff view of a diff run: the differences of run.log by object (DiffLog)
+$dv = $alice->call( 'GET', $PB . '/runs/' . basename( $rd ) . '/diff-view' );
+$xp = preg_match_all( '/^XPATH: /m', $logR );
+eq( array( status( $dv ), $dv[1]['final'] ?? null, $dv[1]['count'] ?? null, count( $dv[1]['entries'] ?? array() ), strpos( $dv[1]['file1']['label'] ?? '', $tr[0] === ( $dv[1]['file1']['run'] ?? '' ) ? 'result of the playbook run' : 'x' ) === 0,
+        $dv[1]['file2']['run'] ?? null, $dv[1]['setcommands'] ?? null ),
+    array( 200, $final, $xp, min( $xp, 5000 ), TRUE, $tr[1], TRUE ),
+    'diff view: one entry per XPath of run.log, the FinalResult, file1 / file2 = the results of the two runs, set commands there' );
+$e0 = $dv[1]['entries'][0] ?? array();
+eq( array( is_string( $e0['location'] ?? null ), $e0['added'] + $e0['removed'] === count( $e0['lines'] ) + $e0['lines_cut'], strpos( $e0['xpath'] ?? '', '/config/' ) === 0 ),
+    array( TRUE, TRUE, TRUE ), 'diff view: an entry has where / what / which and its + / - lines' );
+eq( array( status( $alice->call( 'GET', $PB . '/runs/' . $tr[0] . '/diff-view' ) ), status( $bob->call( 'GET', $PB . '/runs/' . basename( $rd ) . '/diff-view' ) ) ), array( 404, 404 ),
+    'diff view: only of a diff run, not without access' );
+$gridRd = array_column( array_column( $alice->call( 'GET', $MX )[1]['blocks'] ?? array(), null, 'name' )['cmp']['rows'] ?? array(), null, 'key' )[basename( $rd )]['cells'][0]['diff'] ?? null;
+eq( $gridRd, TRUE, 'plug-in matrix: a cell of a finished diff run links to the diff view' );
 eq( array( $blk['broken']['error'] ?? null, $blk['broken']['rows'] ?? null, status( $alice->call( 'PUT', $MX . '/blocks/grid', array( 'values' => array() ) ) ) ),
     array( 'cells of the plug-in: plug-in failure', array(), 405 ), 'plug-in matrix: an error of the plug-in is shown in its block; a matrix can not be saved' );
 // a project type without roles: set like any other, no binding needed

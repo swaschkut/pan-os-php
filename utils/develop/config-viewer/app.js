@@ -76,7 +76,8 @@ function main(...nodes) { clearTimers(); const m = document.getElementById('main
 // ---------------------------------------------------------------- parts in files of their own (js/, loaded by index.html before this file):
 // js/account.js, js/projects.js, js/plugin-pages.js, js/editors.js, js/ldap.js, js/scm.js, js/merger.js, js/project-tools.js,
 // js/viewer-fields.js (the fields of the object windows of the viewer), js/viewer-object.js (the windows of the viewer),
-// js/run-file.js (a result file of a run shown in a tab), js/stats-compare.js (two stats runs compared, in a tab)
+// js/run-file.js (a result file of a run shown in a tab), js/stats-compare.js (two stats runs compared, in a tab),
+// js/diff-view.js (the differences of a diff run by object, in a tab)
 
 // ---------------------------------------------------------------- viewer / editor
 // preset (a link "Open" of a reference, in a new window): type, entry (menu entry of the object's class), ruletype, securityprofiletype, location, filter
@@ -780,6 +781,8 @@ async function openFromHash() {
     if (h.get('p') && h.get('run') && h.get('file')) { await showRunFile(h.get('p'), h.get('run'), h.get('file')); return true; }
     // the figures of two stats runs compared: #p=<project>&stats=<run>[&other=<run>] (js/stats-compare.js)
     if (h.get('p') && h.get('stats')) { await showStatsCompare(h.get('p'), h.get('stats'), h.get('other')); return true; }
+    // the differences of a diff run by object: #p=<project>&diff=<run> (js/diff-view.js)
+    if (h.get('p') && h.get('diff')) { await showDiffView(h.get('p'), h.get('diff')); return true; }
     // where the user was (setPlace): the account page, a project with its tab
     if (h.get('page') === 'account') { await showAccount(); return true; }
     if (h.get('project')) {

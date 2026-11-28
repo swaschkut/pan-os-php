@@ -194,12 +194,15 @@ function pluginMatrixBlock(base, key, b, reload) {
     const start = (body, what) => run(async () => {
         const r = await api('POST', base + '/pages/' + key + '/blocks/' + b.name + '/run', body);
         pluginMatrixNotes[id] = { ok: r.errors.length === 0, text: what + ': ' + r.started.length + ' run(s) started'
+            + (r.waiting ? ' (' + r.waiting + ' wait for room in the queue - they start by themselves)' : '')
             + (r.not_started ? ', ' + r.not_started + ' not started' : '') + (r.errors.length ? ' - ' + r.errors.join('; ') : '') };
         reload();
     });
     const text = c => (c.text || c.state) + (c.at ? ' ' + pluginMatrixTime(c.at) : '');
     const links = c => {
         const a = (c.run ? c.files : []).map(f => el('a', { href: runFileLink(pid, c.run, f), target: '_blank', rel: 'noopener', title: 'open ' + f + ' in a new tab', text: f.split('/').pop() }));
+        // a finished diff run: its differences by object (in a new tab)
+        if (c.diff) a.unshift(el('a', { href: diffViewLink(pid, c.run), target: '_blank', rel: 'noopener', title: 'the differences by object, in a new tab', text: 'diff view' }));
         // the figures of the two runs of the cell compared (the compare of the list of runs, in a new tab)
         if (c.compare) a.push(el('a', { href: location.pathname + '#' + new URLSearchParams({ p: pid, stats: c.compare[0], other: c.compare[1] }).toString(),
             target: '_blank', rel: 'noopener', title: 'compare the figures of the two runs in a new tab', text: 'stats' }));

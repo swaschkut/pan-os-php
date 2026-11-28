@@ -521,6 +521,13 @@ of the viewer's pan-os-php, `playbook.json` in the folder of the run) - every re
 of the run) and the id every image has now (data folder `run-images.json`; at its start, after every run and every 5
 minutes) - a page of a plug-in sees from it that an image was pulled again since a run (`ViewerPluginPage::imageIds()`).
 
+**Diff view.** "Diff view" at a finished diff run (list of runs; in a matrix of a plug-in the link "diff view" of a
+cell with a diff run) opens a tab with the differences by object: grouped by location (shared, device group,
+template / vsys, …) and type (address, pre-rulebase/security/rules, …), per object the lines only file2 has (+) and
+only file1 has (-), a filter that marks what it finds, and what was compared (two versions / the results of two runs
+with their image). The server reads run.log of the run (`DiffLog` of pan-os-php, also the FinalResult of the run);
+at most 5000 objects and 300 lines per object are shown, run.log has all. API: `GET …/runs/<jid>/diff-view`.
+
 **Stats compare.** "Compare stats" at a finished run with a stats result (list of runs, when the project has two of them) opens a
 tab that compares the figures of two stats runs: per statistics block what differs (A, B, B - A), and folded what only
 one of them has. The lists name each run by its version with the note of the version (which run / pan-os-php image
@@ -651,9 +658,12 @@ A run is a run type of the viewer with the version and the values its form sends
 diff: run1, run2, setcommands; …). The browser gets the labels and how many runs an action starts, never the runs:
 `POST …/pages/<plugin>-<page>/blocks/<block>/run {action}` or `{row, column}` - the viewer computes the matrix again and
 starts what it offers now, each run as from the list of runs (the rights of the user, every check of the run type).
-Answer: `started` (run ids), `not_started`, `errors`; when the queue of the project is full the rest is not started
-(the same action again later). A cell that has its run by now offers nothing (409). While a cell is running the viewer
-draws the page again every 10 seconds.
+Answer: `started` (run ids), `waiting`, `not_started`, `errors`. When the queue of the project is full (20 queued /
+running runs), a playbook, stats or diff run waits - state `waiting`, checked like any other run, at most 2000 per
+project - and the job runner queues it as soon as there is room (a waiting run can be cancelled); another run type is
+not started. A run started from the list of runs is refused as before when the queue is full. A cell that has its run
+by now offers nothing (409). While a cell is running the viewer draws the page again every 10 seconds. A cell whose run
+is a finished diff run gets the link "diff view".
 
 **What a page reads of the project** (`ViewerPluginPage`, read only): `runs()` - newest first, at most 1000: jid, type,
 cid (the version), image (name; null: the image of the viewer), state, created / started / finished, error, has_stats,

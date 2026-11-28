@@ -25,7 +25,11 @@ trait ViewerAppJobs
 {
     // ------------------------------------------------------------------ jobs: create a run, its arguments, list, result files
 
-    public function jobCreate( array $user, $pid, $cid, $type, array $in ): array
+    /**
+     * @param bool $mayWait a page of a plug-in starts many runs at once: when the queue of the project is full, a run type
+     *                      of JOB_WAIT_TYPES waits (state 'waiting', checked like any other run) instead of a refusal (429)
+     */
+    public function jobCreate( array $user, $pid, $cid, $type, array $in, bool $mayWait = FALSE ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         if( !is_string( $type ) || !in_array( $type, $this->jobTypes(), TRUE ) )
@@ -449,8 +453,19 @@ trait ViewerAppJobs
                 $meta['bp'] = $in['bp'];
         }
         $open = (int)$this->q( "SELECT COUNT(*) AS c FROM jobs WHERE project_id = ? AND state IN ('queued','running')", array( $p['id'] ) )->fetch()['c'];
-        if( $open >= self::JOB_QUEUE_MAX )
-            throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
+        $state = 'queued';
+        if( $open >= self::JOB_QUEUE_MAX || ( $mayWait && $this->q( "SELECT 1 FROM jobs WHERE project_id = ? AND state = 'waiting' LIMIT 1", array( $p['id'] ) )->fetch() ) )
+        {
+            // others are waiting already: this one waits behind them (the order of the start stays the order of the runs)
+            $waiting = (int)$this->q( "SELECT COUNT(*) AS c FROM jobs WHERE project_id = ? AND state = 'waiting'", array( $p['id'] ) )->fetch()['c'];
+            if( !$mayWait || !in_array( $type, self::JOB_WAIT_TYPES, TRUE ) || $waiting >= self::JOB_WAIT_MAX )
+            {
+                if( $open >= self::JOB_QUEUE_MAX || !$mayWait )
+                    throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
+            }
+            else
+                $state = 'waiting';
+        }
         $jid = self::randomId();
         // sensitive files of the run (fields 'secret' of a plug-in): moved from the upload into the hidden folder of the
         // run before it can start; removed when the run ends (runnerFinish)
@@ -468,7 +483,7 @@ trait ViewerAppJobs
             @chmod( $dir . '/playbook.json', 0600 );
         }
         $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created, image, meta) VALUES (?,?,?,?,?,?,?,?,?,?)',
-            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time(), ( $image ?? '' ) !== '' ? $image : null, isset( $meta ) ? json_encode( $meta ) : null ) );
+            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), $state, time(), ( $image ?? '' ) !== '' ? $image : null, isset( $meta ) ? json_encode( $meta ) : null ) );
         return $this->jobGet( $user, $pid, $jid );
     }
 
@@ -852,15 +867,7 @@ trait ViewerAppJobs
         if( in_array( $meta['result'] ?? null, array( 'PASS', 'FAIL' ), TRUE ) )
             return $meta['result'];
         $log = $this->jobDir( $p, $j['jid'] ) . '/run.log';
-        $result = null;
-        $fh = is_file( $log ) && !is_link( $log ) ? fopen( $log, 'r' ) : FALSE;
-        if( $fh !== FALSE )
-        {
-            while( ( $line = fgets( $fh, 65536 ) ) !== FALSE )
-                if( preg_match( '/^- FinalResult:\s+(PASS|FAIL)\s*$/', $line, $m ) )
-                    $result = $m[1];
-            fclose( $fh );
-        }
+        $result = is_file( $log ) && !is_link( $log ) ? DiffLog::finalResult( $log ) : null;
         if( $result !== null )
         {
             $meta['result'] = $result;
@@ -892,6 +899,41 @@ trait ViewerAppJobs
             }
         }
         return $out;
+    }
+
+    /**
+     * The differences of a finished diff run, read from its run.log (DiffLog): one entry per XPath with where (location:
+     * shared, device-group <name>, template <name>, …), what (kind) and which object (name), the lines only file2 has
+     * (+) and only file1 has (-); the FinalResult; what was compared (two versions / the results of two runs).
+     * At most 5000 entries and 300 lines per entry (the rest is counted).
+     */
+    public function jobDiffView( array $user, $pid, $jid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'a run' );
+        $j = $this->jobRow( $p, $jid );
+        if( $j['type'] !== 'diff' )
+            throw new ViewerException( 'diff view: only of a diff run', 404 );
+        if( !in_array( $j['state'], array( 'done', 'failed' ), TRUE ) )
+            throw new ViewerException( 'the run is not finished', 409 );
+        $dir = $this->jobDir( $p, $j['jid'] );
+        $log = $dir . '/run.log';
+        $d = is_file( $log ) && !is_link( $log ) ? DiffLog::read( $log ) : array( 'final' => null, 'entries' => array(), 'count' => 0, 'truncated' => FALSE );
+        // what the two sides are: a version, or the result of a run (its version and image)
+        $side = function( ?string $cid, ?string $run ) use ( $p ) {
+            if( $run !== null )
+            {
+                $r = $this->q( 'SELECT j.jid, j.type, j.image, c.name FROM jobs j LEFT JOIN configs c ON c.id = j.config_id WHERE j.project_id = ? AND j.jid = ?', array( $p['id'], $run ) )->fetch();
+                return $r ? array( 'run' => $r['jid'], 'label' => 'result of the ' . $r['type'] . ' run ' . substr( $r['jid'], 0, 8 ) . ' on ' . ( $r['name'] ?? '(deleted version)' )
+                    . ' with ' . ( $r['image'] !== null ? 'image ' . $r['image'] : 'the image of the viewer' ) ) : array( 'run' => $run, 'label' => 'a run that is gone' );
+            }
+            $c = $cid !== null ? $this->q( 'SELECT name, note FROM configs WHERE project_id = ? AND cid = ?', array( $p['id'], $cid ) )->fetch() : null;
+            return array( 'run' => null, 'label' => $c ? 'version ' . $c['name'] . ( $c['note'] !== '' && $c['note'] !== null ? ' - ' . $c['note'] : '' ) : '(deleted version)' );
+        };
+        $in = $this->diffInputs( $p, $j );
+        return array( 'run' => self::jobPublic( $j ), 'file1' => $side( $j['cid'], $in['run1'] ), 'file2' => $side( $in['other'], $in['run2'] ),
+            'final' => $d['final'], 'count' => $d['count'], 'truncated' => $d['truncated'], 'entries' => $d['entries'],
+            'setcommands' => is_file( $dir . '/set-commands.txt' ) && !is_link( $dir . '/set-commands.txt' ) );
     }
 
     /**

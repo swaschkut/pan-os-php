@@ -554,6 +554,7 @@ try
         //              …/projects/<pid>/runs/<jid>                GET  state + result files, DELETE cancel / delete
         //              …/projects/<pid>/runs/<jid>/files/<name…>  GET  one result file
         //              …/projects/<pid>/runs/<jid>/stats-compare?other=<jid>  GET  two stats runs compared
+        //              …/projects/<pid>/runs/<jid>/diff-view  GET  the differences of a diff run, by object
         // a run without a version (run type of a plug-in with 'input' => 'none'): …/projects/<pid>/<type>/runs  POST
         if( $n == 4 && $method === 'POST' && $route[3] === 'runs' && in_array( $sub, $app->jobTypes(), TRUE ) )
             viewerOut( $app->jobCreate( $user, $pid, null, $sub, viewerBody() ), 202 );
@@ -574,6 +575,9 @@ try
             // the figures of two finished stats runs compared: …/runs/<jid>/stats-compare?other=<jid>
             if( $n == 5 && $method === 'GET' && $route[4] === 'stats-compare' )
                 viewerOut( $app->jobStatsCompare( $user, $pid, $route[3], $_GET['other'] ?? null ) );
+            // the differences of a finished diff run, by object: …/runs/<jid>/diff-view
+            if( $n == 5 && $method === 'GET' && $route[4] === 'diff-view' )
+                viewerOut( $app->jobDiffView( $user, $pid, $route[3] ) );
             // the servers an LDAP search found, with what the network rules allow, and a suggestion for a query
             if( $n == 5 && $method === 'GET' && $route[4] === 'ldap-servers' )
                 viewerOut( $app->ldapDiscoverResult( $user, $pid, $route[3] ) );

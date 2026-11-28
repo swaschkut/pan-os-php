@@ -55,6 +55,12 @@ pre.log { max-height: 240px; overflow: auto; background: var(--bg); border: 1px 
 table.matrix td { white-space: normal; max-width: 260px; }
 .imagechecks { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; font-weight: normal; }
 .imagechecks .imagecheck { cursor: pointer; }
+.difflines { margin: 4px 0 8px; padding: 6px 8px; background: #f7f8fa; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+.difflines .diffadd { color: #1d6b35; }
+.difflines .diffdel { color: #9b2c22; }
+.diffloc > summary, .diffentry > summary { cursor: pointer; }
+.diffentry { margin: 2px 0 2px 12px; }
+.diffkind h3 { font-size: 14px; margin: 10px 0 4px; }
 .matrixfiles a { display: inline-block; margin: 3px 8px 0 0; font-size: 12px; }
 /* stats compare: what exists in one run only, folded */
 details.statsonly { margin-top: 10px; }

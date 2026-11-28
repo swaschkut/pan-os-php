@@ -187,7 +187,10 @@ trait ViewerAppPluginPages
                 $out['actions'][] = array( 'name' => $name, 'label' => $a['label'], 'title' => $a['title'], 'count' => count( $a['runs'] ) );
             $txt = function( $v, int $max ) { return is_scalar( $v ) ? substr( preg_replace( '/[\x00-\x1f]/', ' ', (string)$v ), 0, $max ) : ''; };
             $key = function( $v ) { if( !is_scalar( $v ) || (string)$v === '' || strlen( (string)$v ) > 200 ) throw new Exception( 'a key: text of 1 to 200 characters' ); return (string)$v; };
-            $jids = array_flip( array_column( $this->q( 'SELECT jid FROM jobs WHERE project_id = ?', array( $p['id'] ) )->fetchAll(), 'jid' ) );
+            // the runs of the project: jid => a finished diff run (its cell links to the diff view)
+            $jids = array();
+            foreach( $this->q( 'SELECT jid, type, state FROM jobs WHERE project_id = ?', array( $p['id'] ) )->fetchAll() as $x )
+                $jids[$x['jid']] = $x['type'] === 'diff' && in_array( $x['state'], array( 'done', 'failed' ), TRUE );
             // a time: shown in the time of the browser (as everywhere in the viewer)
             $at = function( $v ) { return is_int( $v ) && $v > 0 ? $v : null; };
             foreach( (array)( $m['columns'] ?? array() ) as $c )
@@ -203,7 +206,7 @@ trait ViewerAppPluginPages
                     $c = $m['cells'][$row['key']][$ck] ?? null;
                     if( !is_array( $c ) )
                     {
-                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'at' => null, 'run' => null, 'files' => array(), 'compare' => null, 'action' => null );
+                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'at' => null, 'run' => null, 'files' => array(), 'compare' => null, 'action' => null, 'diff' => FALSE );
                         continue;
                     }
                     $state = in_array( $c['state'] ?? 'none', self::MATRIX_STATES, TRUE ) ? $c['state'] ?? 'none' : 'none';
@@ -219,7 +222,7 @@ trait ViewerAppPluginPages
                     // action: a run the viewer starts for this cell (the browser gets the label only - POST …/run names the cell)
                     $act = self::matrixRun( $c['action']['run'] ?? null ) !== null ? $txt( $c['action']['label'] ?? 'start', 40 ) : null;
                     $row['cells'][] = array( 'state' => $state, 'text' => $txt( $c['text'] ?? '', 200 ), 'title' => $txt( $c['title'] ?? '', 1000 ), 'at' => $at( $c['at'] ?? null ),
-                        'run' => $run, 'files' => $files, 'compare' => $cmp, 'action' => $act );
+                        'run' => $run, 'files' => $files, 'compare' => $cmp, 'action' => $act, 'diff' => $run !== null && $jids[$run] );
                 }
                 $out['rows'][] = $row;
                 if( count( $out['rows'] ) > 2000 )
@@ -277,9 +280,9 @@ trait ViewerAppPluginPages
      * POST …/projects/<pid>/pages/<plugin>-<page>/blocks/<matrix>/run {action} | {row, column}: starts the runs of an
      * action of the matrix, or the run of one cell. The matrix is computed again here - the browser names only the
      * action / the cell, never a run. Every run is started as from the list of runs (jobCreate: the rights of the user,
-     * every check of the run type); when the queue of the project is full the rest is not started (started again later
-     * by the same action - the plug-in no longer offers what runs).
-     * @return array started (run ids), not_started (count), errors (at most 10 texts)
+     * every check of the run type); when the queue of the project is full a playbook / stats / diff run waits (state
+     * 'waiting': the job runner queues it when there is room), any other run type is not started.
+     * @return array started (run ids, the waiting ones too), waiting (count), not_started (count), errors (at most 10 texts)
      */
     public function pluginMatrixRun( array $user, $pid, $key, $block, array $in ): array
     {
@@ -317,12 +320,16 @@ trait ViewerAppPluginPages
                 throw new ViewerException( 'this cell has nothing to start (any more)', 409 );
             $runs = array( $r );
         }
-        $out = array( 'started' => array(), 'not_started' => 0, 'errors' => array() );
+        $out = array( 'started' => array(), 'waiting' => 0, 'not_started' => 0, 'errors' => array() );
         foreach( $runs as $i => $r )
         {
             try
             {
-                $out['started'][] = $this->jobCreate( $user, $p['pid'], $r['cid'], $r['type'], $r['values'] )['jid'];
+                // a full queue: the run waits (checked now, queued by the job runner when there is room)
+                $j = $this->jobCreate( $user, $p['pid'], $r['cid'], $r['type'], $r['values'], TRUE );
+                $out['started'][] = $j['jid'];
+                if( $j['state'] === 'waiting' )
+                    $out['waiting']++;
             }
             catch( ViewerException $e )
             {

@@ -48,6 +48,7 @@ require_once dirname(__FILE__) . '/ViewerAppLdap.php';
 require_once dirname(__FILE__) . '/../../../../lib/misc-classes/ConfigObjectSplit.php';
 // compare of two stats results: the same code as type=playbook-validation compare-stats-…
 require_once dirname(__FILE__) . '/../../../../lib/misc-classes/StatsCompare.php';
+require_once dirname(__FILE__) . '/../../../../lib/misc-classes/DiffLog.php';
 
 class ViewerException extends Exception
 {
@@ -1205,6 +1206,11 @@ class ViewerApp
     /** the project of the installation-wide runs (App-ID / MaxMind of the administrator): not listed, only administrators */
     const SYSTEM_PID = '00000000000000000000000000000000';
     const JOB_QUEUE_MAX = 20;          // queued + running jobs per project
+    // runs started from a page of a plug-in (a matrix) when the queue is full: they wait - with every check done - and the
+    // job runner queues them as the queue of the project has room again (state 'waiting'); at most this many per project
+    const JOB_WAIT_MAX = 2000;
+    /** run types that may wait (no secret / sensitive input that would sit in the folder of the run longer) */
+    const JOB_WAIT_TYPES = array( 'playbook', 'stats', 'diff' );
     const JOB_FILE_MAX = 104857600;    // largest result file that can be downloaded
 
     private function jobDir( array $project, string $jid ): string
@@ -1592,9 +1598,9 @@ class ViewerApp
         $j = $this->jobRow( $p, $jid );
         if( $p['role'] === 'read' && (int)$j['user_id'] !== (int)$user['id'] )
             throw new ViewerException( 'not allowed: only who started the run, or the project permission "write"', 403 );
-        if( in_array( $j['state'], array( 'queued', 'running' ), TRUE ) )
+        if( in_array( $j['state'], array( 'waiting', 'queued', 'running' ), TRUE ) )
         {
-            $this->q( "UPDATE jobs SET state = 'cancelled', finished = ? WHERE id = ? AND state IN ('queued','running')", array( time(), $j['id'] ) );
+            $this->q( "UPDATE jobs SET state = 'cancelled', finished = ? WHERE id = ? AND state IN ('waiting','queued','running')", array( time(), $j['id'] ) );
             // an import: its key store goes at once (the job runner stops the run); sensitive inputs and what the run has
             // written of its sensitive results as well (a cancelled run never offers them)
             @unlink( $this->jobDir( $p, $j['jid'] ) . '/.panconfkeystore' );
@@ -1983,6 +1989,14 @@ class ViewerApp
     {
         $this->refreshPlugins();
         $this->db->beginTransaction();
+        // waiting runs (started from a matrix when the queue was full): queued as the queue of their project has room
+        foreach( $this->q( "SELECT DISTINCT project_id FROM jobs WHERE state = 'waiting'" )->fetchAll() as $w )
+        {
+            $open = (int)$this->q( "SELECT COUNT(*) AS c FROM jobs WHERE project_id = ? AND state IN ('queued','running')", array( $w['project_id'] ) )->fetch()['c'];
+            if( $open < self::JOB_QUEUE_MAX )
+                $this->q( "UPDATE jobs SET state = 'queued' WHERE id IN ( SELECT id FROM jobs WHERE project_id = ? AND state = 'waiting' ORDER BY id LIMIT " . (int)( self::JOB_QUEUE_MAX - $open ) . " )",
+                    array( $w['project_id'] ) );
+        }
         $j = $this->q( "SELECT j.*, p.pid, c.file FROM jobs j JOIN projects p ON p.id = j.project_id LEFT JOIN configs c ON c.id = j.config_id
             WHERE j.state = 'queued' ORDER BY j.id LIMIT 1" )->fetch();
         if( $j )
