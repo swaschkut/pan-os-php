@@ -145,6 +145,9 @@ function jobsStart( array $job, int $n )
                 $env[$k] = (string)getenv( $k );
         $env['HOME'] = (string)( getenv( 'HOME' ) ?: '/' );
         unset( $env['TMPDIR'], $env['PANOSPHP_LOG_DIR'] );
+        // which image the run runs with (an image not pulled yet: looked up again when the run ends)
+        if( $n === 0 )
+            $app->runnerImageId( $job['id'], $container->imageId( (string)( $job['image'] ?? '' ) ) );
     }
     elseif( ( $job['image'] ?? '' ) !== '' )
     {
@@ -163,8 +166,15 @@ function jobsStart( array $job, int $n )
     return $proc;
 }
 
+// the ids of the images now (for "outdated" on pages of plug-ins): at the start, after a run and every 5 minutes
+$imageIdsAt = 0;
 while( !$stop )
 {
+    if( $container !== null && time() - $imageIdsAt >= 300 )
+    {
+        $app->runnerImageIds( $container->imageIds() );
+        $imageIdsAt = time();
+    }
     // finished, cancelled, deleted or too long
     foreach( $running as $id => $r )
     {
@@ -188,6 +198,12 @@ while( !$stop )
                 else
                     unset( $running[$id] );
                 continue;
+            }
+            if( $container !== null )
+            {
+                $app->runnerImageId( $id, $container->imageId( (string)( $r['job']['image'] ?? '' ) ) );
+                // a run may have pulled its image: the ids of the images again
+                $imageIdsAt = 0;
             }
             if( $exit === 0 && empty( $st['signaled'] ) )
                 $app->runnerFinish( $id, 'done' );

@@ -88,8 +88,13 @@ trait ViewerAppPluginPages
                 }
             }
             // runs, versions, files of the project and the images of the installation (read only)
-            if( in_array( $what, array( 'runs', 'versions', 'files', 'images' ), TRUE ) && count( $args ) === 0 )
+            if( in_array( $what, array( 'runs', 'versions', 'files', 'images', 'image-ids' ), TRUE ) && count( $args ) === 0 )
                 return $this->pluginProjectData( $p, $what );
+            // the figures of two runs with a stats result compared, the visibility not 100 % of one (read only)
+            if( $what === 'stats-compare' && count( $args ) === 2 )
+                return $this->pageStatsCompare( $p, $args[0], $args[1] );
+            if( $what === 'not-full' && count( $args ) === 1 )
+                return $this->pageNotFull( $p, $args[0] );
             $roles = self::rolesOf( $p );
             if( $what === 'role' && count( $args ) === 1 )
                 return $roles[$args[0]] ?? null;
@@ -128,6 +133,8 @@ trait ViewerAppPluginPages
     {
         if( $what === 'images' )
             return array_merge( array( ViewerPlugins::IMAGE_VIEWER ), $this->runImages() );
+        if( $what === 'image-ids' )
+            return $this->runImageIds();
         if( $what === 'files' )
             return array_map( function( $f ) { return array( 'fid' => $f['fid'], 'kind' => $f['kind'], 'name' => $f['name'], 'size' => (int)$f['size'], 'created' => (int)$f['created'] ); },
                 $this->q( 'SELECT fid, kind, name, size, created FROM files WHERE project_id = ? ORDER BY id DESC', array( $p['id'] ) )->fetchAll() );
@@ -151,9 +158,11 @@ trait ViewerAppPluginPages
         foreach( $this->q( 'SELECT j.*, c.cid FROM jobs j LEFT JOIN configs c ON c.id = j.config_id WHERE j.project_id = ? ORDER BY j.id DESC LIMIT 1000', array( $p['id'] ) )->fetchAll() as $j )
         {
             $meta = json_decode( (string)( $j['meta'] ?? '' ), TRUE );
-            $out[] = array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'image' => $j['image'] ?? null, 'state' => $j['state'],
+            // a diff run: what it compared (two run results / another version) and its result (PASS / FAIL)
+            $out[] = array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'image' => $j['image'] ?? null, 'image_id' => $j['image_id'] ?? null, 'state' => $j['state'],
                 'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null, 'finished' => $j['finished'] !== null ? (int)$j['finished'] : null,
-                'error' => $j['error'], 'playbook' => $meta['playbook'] ?? null, 'then' => $meta['then'] ?? null, 'bp' => $meta['bp'] ?? null ) + $this->jobHas( $p, $j );
+                'error' => $j['error'], 'playbook' => $meta['playbook'] ?? null, 'then' => $meta['then'] ?? null, 'bp' => $meta['bp'] ?? null )
+                + $this->diffInputs( $p, $j ) + array( 'diff' => $this->diffResult( $p, $j ) ) + $this->jobHas( $p, $j );
         }
         return $out;
     }
@@ -162,8 +171,8 @@ trait ViewerAppPluginPages
     const MATRIX_STATES = array( 'none', 'ok', 'warn', 'fail', 'running', 'old' );
 
     /**
-     * a matrix block for the page, from cells() of the plug-in: columns, rows, cells (state, text, title, run, files) -
-     * checked: plain text, a run of this project, plain file names
+     * a matrix block for the page, from cells() of the plug-in: columns, rows (key, label, sub, at), cells (state, text,
+     * title, at, run, files, compare) - checked: plain text, runs of this project, plain file names, a time as a number
      */
     private function matrixBlockPublic( array $p, array $b, ViewerPluginPage $view ): array
     {
@@ -175,7 +184,9 @@ trait ViewerAppPluginPages
                 throw new Exception( 'cells: an array with columns, rows, cells' );
             $txt = function( $v, int $max ) { return is_scalar( $v ) ? substr( preg_replace( '/[\x00-\x1f]/', ' ', (string)$v ), 0, $max ) : ''; };
             $key = function( $v ) { if( !is_scalar( $v ) || (string)$v === '' || strlen( (string)$v ) > 200 ) throw new Exception( 'a key: text of 1 to 200 characters' ); return (string)$v; };
-            $jids = array_flip( array_column( $this->pluginProjectData( $p, 'runs' ), 'jid' ) );
+            $jids = array_flip( array_column( $this->q( 'SELECT jid FROM jobs WHERE project_id = ?', array( $p['id'] ) )->fetchAll(), 'jid' ) );
+            // a time: shown in the time of the browser (as everywhere in the viewer)
+            $at = function( $v ) { return is_int( $v ) && $v > 0 ? $v : null; };
             foreach( (array)( $m['columns'] ?? array() ) as $c )
                 $out['columns'][] = array( 'key' => $key( $c['key'] ?? null ), 'label' => $txt( $c['label'] ?? $c['key'], 80 ), 'title' => $txt( $c['title'] ?? '', 300 ) );
             if( count( $out['columns'] ) > 30 )
@@ -183,13 +194,13 @@ trait ViewerAppPluginPages
             $cols = array_column( $out['columns'], 'key' );
             foreach( (array)( $m['rows'] ?? array() ) as $r )
             {
-                $row = array( 'key' => $key( $r['key'] ?? null ), 'label' => $txt( $r['label'] ?? $r['key'], 200 ), 'sub' => $txt( $r['sub'] ?? '', 300 ), 'cells' => array() );
+                $row = array( 'key' => $key( $r['key'] ?? null ), 'label' => $txt( $r['label'] ?? $r['key'], 200 ), 'sub' => $txt( $r['sub'] ?? '', 300 ), 'at' => $at( $r['at'] ?? null ), 'cells' => array() );
                 foreach( $cols as $ck )
                 {
                     $c = $m['cells'][$row['key']][$ck] ?? null;
                     if( !is_array( $c ) )
                     {
-                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'run' => null, 'files' => array() );
+                        $row['cells'][] = array( 'state' => 'none', 'text' => '', 'title' => '', 'at' => null, 'run' => null, 'files' => array(), 'compare' => null );
                         continue;
                     }
                     $state = in_array( $c['state'] ?? 'none', self::MATRIX_STATES, TRUE ) ? $c['state'] ?? 'none' : 'none';
@@ -198,7 +209,12 @@ trait ViewerAppPluginPages
                     foreach( (array)( $c['files'] ?? array() ) as $f )
                         if( $run !== null && is_string( $f ) && preg_match( '#^[A-Za-z0-9][A-Za-z0-9._-]{0,80}(/[A-Za-z0-9][A-Za-z0-9._-]{0,80})?$#', $f ) && count( $files ) < 10 )
                             $files[] = $f;
-                    $row['cells'][] = array( 'state' => $state, 'text' => $txt( $c['text'] ?? '', 200 ), 'title' => $txt( $c['title'] ?? '', 1000 ), 'run' => $run, 'files' => $files );
+                    // compare: two runs of this project whose figures "Compare stats" shows (a link of the cell)
+                    $cmp = $c['compare'] ?? null;
+                    $cmp = is_array( $cmp ) && count( $cmp ) === 2 && is_string( $cmp[0] ?? null ) && is_string( $cmp[1] ?? null ) && isset( $jids[$cmp[0]], $jids[$cmp[1]] ) && $cmp[0] !== $cmp[1]
+                        ? array( $cmp[0], $cmp[1] ) : null;
+                    $row['cells'][] = array( 'state' => $state, 'text' => $txt( $c['text'] ?? '', 200 ), 'title' => $txt( $c['title'] ?? '', 1000 ), 'at' => $at( $c['at'] ?? null ),
+                        'run' => $run, 'files' => $files, 'compare' => $cmp );
                 }
                 $out['rows'][] = $row;
                 if( count( $out['rows'] ) > 2000 )

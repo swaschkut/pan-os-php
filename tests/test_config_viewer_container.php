@@ -140,6 +140,12 @@ $a = array_slice( $argv, 1 );
 file_put_contents( __DIR__ . '/calls.log', json_encode( $a ) . "\n", FILE_APPEND | LOCK_EX );
 if( $a[0] === 'version' || $a[0] === 'ps' )
     exit( 0 );
+// the id of an image: derived from its reference (a real runtime: sha256 of the image)
+if( $a[0] === 'image' && ( $a[1] ?? '' ) === 'inspect' )
+{
+    print 'sha256:' . hash( 'sha256', end( $a ) ) . "\n";
+    exit( 0 );
+}
 if( $a[0] === 'rm' )
 {
     $f = __DIR__ . '/' . end( $a ) . '.pid';
@@ -391,6 +397,11 @@ $r = waitRun( $P . '/runs/' . $jidS );
 $c = array_values( array_filter( calls(), function( $c ) use ( $jidS ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jidS, $c, TRUE ); } ) )[0] ?? array();
 eq( array( $r[1]['state'] ?? null, $r[1]['image'] ?? null, in_array( 'example.test/pan-os-php:beta', $c, TRUE ), in_array( 'pan-os-php:test', $c, TRUE ) ),
     array( 'done', 'beta', TRUE, FALSE ), 'built-in stats run with another image: started with the image of the name' );
+// the id of the image the run ran with, and the ids of all images now (for "outdated" on pages of plug-ins)
+$ids = json_decode( (string)@file_get_contents( $data . '/run-images.json' ), TRUE );
+eq( array( $r[1]['image_id'] ?? null, $ids['ids'] ?? null ),
+    array( 'sha256:' . hash( 'sha256', 'example.test/pan-os-php:beta' ), array( '@viewer' => 'sha256:' . hash( 'sha256', 'pan-os-php:test' ), 'beta' => 'sha256:' . hash( 'sha256', 'example.test/pan-os-php:beta' ) ) ),
+    'run with another image: the id of its image is kept with the run; the job runner keeps the ids of all images' );
 
 // playbook with a BP JSON, result as version
 $r = call( 'POST', $P . '/files?kind=playbook', null, array( 'pb.json', json_encode( array( 'command' => array(

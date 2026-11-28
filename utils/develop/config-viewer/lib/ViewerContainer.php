@@ -218,6 +218,28 @@ class ViewerContainer
         return array_merge( $cmd, $args );
     }
 
+    /**
+     * the id of an image as the runtime has it now (docker / podman image inspect); null: not there (not pulled yet)
+     * @param string $name a name of PANOSPHP_VIEWER_CONTAINER_IMAGES, '' / '@viewer': the image of the viewer
+     */
+    public function imageId( string $name ): ?string
+    {
+        $image = $name === '' || $name === '@viewer' ? $this->image : ( $this->images[$name] ?? null );
+        if( $image === null )
+            return null;
+        $id = trim( self::quiet( array( $this->program, 'image', 'inspect', '--format', '{{.Id}}', $image ) ) );
+        return preg_match( '/^(sha256:)?[0-9a-f]{64}$/', $id ) ? $id : null;
+    }
+
+    /** @return array<string,?string> the ids of all images: '@viewer' and the names of PANOSPHP_VIEWER_CONTAINER_IMAGES */
+    public function imageIds(): array
+    {
+        $out = array( '@viewer' => $this->imageId( '' ) );
+        foreach( array_keys( $this->images ) as $n )
+            $out[$n] = $this->imageId( $n );
+        return $out;
+    }
+
     /** stop the container of a run (cancel, time limit, delete) */
     public function kill( string $jid ): void
     {

@@ -334,6 +334,10 @@ class ViewerApp
         // what a run was started with, for the pages of plug-ins (JSON; a playbook run: playbook, then, bp - file ids)
         if( !in_array( 'meta', array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' ), TRUE ) )
             $this->db->exec( 'ALTER TABLE jobs ADD COLUMN meta TEXT' );
+        // the id of the image a run ran with (docker / podman: sha256:…; set by the job runner) - "outdated" when the
+        // image of that name is another one now (runImageIds)
+        if( !in_array( 'image_id', array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' ), TRUE ) )
+            $this->db->exec( 'ALTER TABLE jobs ADD COLUMN image_id TEXT' );
         // command line use an administrator has seen (shown once after the login: cliNotices)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(users)' )->fetchAll(), 'name' );
         if( !in_array( 'cli_seen', $cols, TRUE ) )
@@ -1355,6 +1359,51 @@ class ViewerApp
         {
             return array();
         }
+    }
+
+    /** the file in the data folder with the ids of the images as the job runner saw them last (runnerImageIds) */
+    const RUN_IMAGE_IDS_FILE = 'run-images.json';
+
+    /**
+     * the id each image has now (the job runner looks them up when it starts and every few minutes):
+     * name => id ('@viewer': the image of the viewer); null: not known (no container runtime, image not pulled yet)
+     * @return array<string,?string>
+     */
+    public function runImageIds(): array
+    {
+        $out = array( '@viewer' => null );
+        foreach( $this->runImages() as $n )
+            $out[$n] = null;
+        $f = $this->dataDir . '/' . self::RUN_IMAGE_IDS_FILE;
+        $saved = is_file( $f ) && !is_link( $f ) ? json_decode( (string)file_get_contents( $f ), TRUE ) : null;
+        foreach( is_array( $saved['ids'] ?? null ) ? $saved['ids'] : array() as $n => $id )
+            if( array_key_exists( (string)$n, $out ) && is_string( $id ) && self::isImageId( $id ) )
+                $out[(string)$n] = $id;
+        return $out;
+    }
+
+    /** an image id as docker / podman report it: sha256:<64 hex> (podman: 64 hex) */
+    public static function isImageId( string $id ): bool
+    {
+        return (bool)preg_match( '/^(sha256:)?[0-9a-f]{64}$/', $id );
+    }
+
+    /** job runner: the ids of the images now (name => id or null) */
+    public function runnerImageIds( array $ids ): void
+    {
+        $f = $this->dataDir . '/' . self::RUN_IMAGE_IDS_FILE;
+        $clean = array();
+        foreach( $ids as $n => $id )
+            $clean[(string)$n] = is_string( $id ) && self::isImageId( $id ) ? $id : null;
+        file_put_contents( $f . '.tmp', json_encode( array( 'checked' => time(), 'ids' => $clean ) ) );
+        rename( $f . '.tmp', $f );
+    }
+
+    /** job runner: the id of the image a run runs with */
+    public function runnerImageId( int $id, ?string $imageId ): void
+    {
+        if( $imageId !== null && self::isImageId( $imageId ) )
+            $this->q( 'UPDATE jobs SET image_id = ? WHERE id = ? AND image_id IS NULL', array( $imageId, $id ) );
     }
 
     private function pluginKinds(): array

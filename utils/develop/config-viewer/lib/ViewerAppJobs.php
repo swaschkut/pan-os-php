@@ -380,15 +380,34 @@ trait ViewerAppJobs
             // stats and the security profile overviews of the result). Both are checked; the run gets one playbook -
             // the first with the steps of the second appended - written into its folder when it is queued (playbook.json)
             $then = $in['then'] ?? null;
+            $fj = json_decode( (string)file_get_contents( isset( $pb ) ? $pb['path'] : $this->playbookDir() . '/' . $predefined ), TRUE );
+            $joined = FALSE;
             if( $then !== null && $then !== '' )
             {
                 $tf = $this->fileGet( $p, $then, 'playbook' );
                 $meta['then'] = $tf['fid'];
                 $tj = json_decode( (string)file_get_contents( $tf['path'] ), TRUE );
                 $this->playbookCheck( $tj );
-                $fj = json_decode( (string)file_get_contents( isset( $pb ) ? $pb['path'] : $this->playbookDir() . '/' . $predefined ), TRUE );
                 $fj['command'] = array_merge( array_values( $fj['command'] ), array_values( $tj['command'] ) );
                 $this->playbookCheck( $fj );
+                $joined = TRUE;
+            }
+            // another release (image): the SCM variants of the steps ("scm": false / { … }, "platform": "scm" | "panos")
+            // are resolved here for the version of the run, with the code of this pan-os-php (PLAYBOOK__::platformCommands) -
+            // a release before them passes their values on as arguments ("unsupported argument provided") and runs the
+            // steps of both platforms. So every release runs the same plain steps.
+            if( ( $in['image'] ?? '' ) !== '' && self::playbookHasPlatformKeys( $fj ) )
+            {
+                if( !class_exists( 'PLAYBOOK__' ) )
+                    require_once dirname( __FILE__ ) . '/../../../lib/PLAYBOOK__.php';
+                $fj['command'] = array_values( PLAYBOOK__::platformCommands( array_values( $fj['command'] ), PLAYBOOK__::inputIsSCM( $this->projectDir( $p['pid'] ) . '/' . $c['file'] ) ) );
+                if( count( $fj['command'] ) === 0 )
+                    throw new ViewerException( 'playbook: no step is left for this configuration (every step is for the other platform)', 400 );
+                $this->playbookCheck( $fj );
+                $joined = TRUE;
+            }
+            if( $joined )
+            {
                 $playbookJoined = json_encode( $fj, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
                 $json = 'json=%JOB%/playbook.json';
             }
@@ -704,8 +723,8 @@ trait ViewerAppJobs
         return array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'args' => json_decode( $j['args'], TRUE ), 'state' => $j['state'], 'user' => $j['user'],
             'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null,
             'finished' => $j['finished'] !== null ? (int)$j['finished'] : null, 'error' => $j['error'], 'reason' => $j['reason'] ?? null,
-            // the image the run asked for by name (null: the image of the viewer)
-            'image' => $j['image'] ?? null );
+            // the image the run asked for by name (null: the image of the viewer) and the id it ran with (null: not known)
+            'image' => $j['image'] ?? null, 'image_id' => $j['image_id'] ?? null );
     }
 
     /** result files of a job: names relative to the folder of the job */
@@ -809,6 +828,111 @@ trait ViewerAppJobs
 
     /** the result file of a stats run with its figures (type=stats … json-to-folder debugapi) */
     const STATS_RESULT_FILE = 'json/debugAPI_string.json';
+
+    /** does a step of the playbook have SCM variants ("scm", "platform": PLAYBOOK__::platformCommands) ? */
+    private static function playbookHasPlatformKeys( array $j ): bool
+    {
+        foreach( (array)( $j['command'] ?? array() ) as $step )
+            if( is_array( $step ) && ( array_key_exists( 'scm', $step ) || array_key_exists( 'platform', $step ) ) )
+                return TRUE;
+        return FALSE;
+    }
+
+    /**
+     * the result of a finished diff run: 'PASS' / 'FAIL' - the line "- FinalResult: …" type=diff writes at the end of
+     * run.log (what type=playbook-validation checks); null: not finished / no such line. Read once, then kept with the
+     * run (meta 'result').
+     */
+    private function diffResult( array $p, array $j ): ?string
+    {
+        if( $j['type'] !== 'diff' || $j['state'] !== 'done' )
+            return null;
+        $meta = json_decode( (string)( $j['meta'] ?? '' ), TRUE );
+        $meta = is_array( $meta ) ? $meta : array();
+        if( in_array( $meta['result'] ?? null, array( 'PASS', 'FAIL' ), TRUE ) )
+            return $meta['result'];
+        $log = $this->jobDir( $p, $j['jid'] ) . '/run.log';
+        $result = null;
+        $fh = is_file( $log ) && !is_link( $log ) ? fopen( $log, 'r' ) : FALSE;
+        if( $fh !== FALSE )
+        {
+            while( ( $line = fgets( $fh, 65536 ) ) !== FALSE )
+                if( preg_match( '/^- FinalResult:\s+(PASS|FAIL)\s*$/', $line, $m ) )
+                    $result = $m[1];
+            fclose( $fh );
+        }
+        if( $result !== null )
+        {
+            $meta['result'] = $result;
+            $this->q( 'UPDATE jobs SET meta = ? WHERE id = ?', array( json_encode( $meta ), $j['id'] ) );
+        }
+        return $result;
+    }
+
+    /**
+     * what a diff run compared: run1 / run2 (two run results, the run ids) or other (the version file2 - its cid), from
+     * its arguments
+     * @return array run1, run2, other (null each when not)
+     */
+    private function diffInputs( array $p, array $j ): array
+    {
+        $out = array( 'run1' => null, 'run2' => null, 'other' => null );
+        if( $j['type'] !== 'diff' )
+            return $out;
+        foreach( (array)json_decode( (string)$j['args'], TRUE ) as $a )
+        {
+            if( !is_string( $a ) )
+                continue;
+            if( preg_match( '#^file([12])=%PROJECT%/jobs/([0-9a-f]{32})/[A-Za-z0-9._-]+$#', $a, $m ) )
+                $out['run' . $m[1]] = $m[2];
+            elseif( preg_match( '#^file2=%PROJECT%/([0-9a-f]{32}\.xml)$#', $a, $m ) )
+            {
+                $c = $this->q( 'SELECT cid FROM configs WHERE project_id = ? AND file = ?', array( $p['id'], $m[1] ) )->fetch();
+                $out['other'] = $c ? $c['cid'] : null;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * for a page of a plug-in: the compare of the figures of two finished runs with a stats result (StatsCompare::compare(),
+     * as "Compare stats"); null: one of them is no such run of the project
+     */
+    private function pageStatsCompare( array $p, $a, $b ): ?array
+    {
+        try
+        {
+            if( !is_string( $a ) || !is_string( $b ) || $a === $b )
+                return null;
+            return StatsCompare::compare( $this->statsRun( $p, $a )['json'], $this->statsRun( $p, $b )['json'] );
+        }
+        catch( ViewerException $e )
+        {
+            return null;
+        }
+    }
+
+    /**
+     * for a page of a plug-in: the visibility not 100 % of a finished run with a stats result (StatsCompare::notFull, the
+     * exclusions of compare-stats-not-100), every statistics block: list of block, name, group, value; null: no such run
+     */
+    private function pageNotFull( array $p, $jid ): ?array
+    {
+        try
+        {
+            if( !is_string( $jid ) )
+                return null;
+            $out = array();
+            foreach( StatsCompare::blocks( $this->statsRun( $p, $jid )['json'] ) as $header => $block )
+                foreach( StatsCompare::notFull( $block ) as $name => $d )
+                    $out[] = array( 'block' => (string)$header, 'name' => (string)$name, 'group' => $d['group'] ?? null, 'value' => $d['value'] );
+            return $out;
+        }
+        catch( ViewerException $e )
+        {
+            return null;
+        }
+    }
 
     /** a finished stats run of the project with what tells it apart from another one: version, note of the version, image */
     private function statsRun( array $p, $jid ): array

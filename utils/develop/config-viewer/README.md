@@ -511,6 +511,16 @@ the security profile exports. The run then has the result configuration, the fig
 "Diff result" at two runs of the list compares their result configurations (no versions needed); "Compare stats"
 compares their figures.
 
+**A playbook with SCM variants and another image.** Steps of a playbook can have SCM variants (`"scm": false` /
+`{ … }`, `"platform": "scm" | "panos"`, e.g. `visibility.json`). A release before them does not know these keys: it
+passes their values on as arguments ("unsupported argument provided") and runs the steps of both platforms. A playbook
+run with another image therefore gets the steps resolved by the viewer for its version (`PLAYBOOK__::platformCommands`
+of the viewer's pan-os-php, `playbook.json` in the folder of the run) - every release runs the same plain steps.
+
+**The image id of a run.** With a container runtime the job runner keeps the id of the image a run ran with (`image_id`
+of the run) and the id every image has now (data folder `run-images.json`; at its start, after every run and every 5
+minutes) - a page of a plug-in sees from it that an image was pulled again since a run (`ViewerPluginPage::imageIds()`).
+
 **Stats compare.** "Compare stats" at a finished run with a stats result (list of runs, when the project has two of them) opens a
 tab that compares the figures of two stats runs: per statistics block what differs (A, B, B - A), and folded what only
 one of them has. The lists name each run by its version with the note of the version (which run / pan-os-php image
@@ -630,13 +640,21 @@ array( 'name' => 'grid', 'kind' => 'matrix', 'title' => 'Runs', 'cells' => funct
 ```
 
 `state`: none, ok, warn, fail, running, old. `run` must be a run of the project, `files` plain names of its result files
-(they open in a tab); at most 30 columns, 2000 rows. A row or column the plug-in does not list is not shown.
+(they open in a tab); at most 30 columns, 2000 rows. A row or column the plug-in does not list is not shown. A cell and
+a row can have `at` (a time, seconds since 1970): the viewer shows it in the time of the browser. A cell can have
+`compare` (two runs of the project with a stats result): a link "stats" opens "Compare stats" of the two in a tab.
 
 **What a page reads of the project** (`ViewerPluginPage`, read only): `runs()` - newest first, at most 1000: jid, type,
 cid (the version), image (name; null: the image of the viewer), state, created / started / finished, error, has_stats,
 has_result, saved, and for a playbook run `playbook` (file id or `predefined:<name>`), `then`, `bp` (file ids);
 `versions()` - cid, name, note, created, size, from_run (the run whose result it is; null: uploaded / imported);
 `files()` - fid, kind, name, size, created; `images()` - `@viewer` and the names of the installation.
+A run also has `image_id` (the id of the image it ran with; null: not known), a diff run `run1` / `run2` (the two run
+results it compared) or `other` (the other version), and `diff`: `PASS` / `FAIL` (the FinalResult of type=diff).
+`imageIds()` - name => the id of the image now (null: not known); `statsCompare( <jid>, <jid> )` - the figures of two
+runs with a stats result compared (`StatsCompare::compare()`: equal, same, changed, only_a, only_b, blocks, …);
+`notFull( <jid> )` - the visibility not 100 % of a run (block, name, group, value; the exclusions of
+compare-stats-not-100). Both null for a run that is no stats run of the project.
 
 **Table blocks** - rows of the plug-in (e.g. every MU IP pool, every tunnel), some columns editable; stored are the
 changes per row, the value of the plug-in stays visible below a changed cell:

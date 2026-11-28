@@ -174,16 +174,30 @@ function pluginTableBlock(base, key, b, canWrite, reload) {
 // a matrix of a plug-in (read only): rows x columns, a state per cell - e.g. configurations x pan-os-php images. A cell can
 // name a run of the project: its files open in a tab (js/run-file.js)
 const PLUGIN_MATRIX_BADGE = { ok: 'badge ok', fail: 'badge warn', warn: 'badge dirty', old: 'badge dirty', running: 'badge', none: '' };
+// a time of a matrix (cell / row): short, in the time of the browser
+function pluginMatrixTime(ts) {
+    return ts ? new Date(ts * 1000).toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+}
+
 function pluginMatrixBlock(base, b) {
     const pid = decodeURIComponent(base.split('/')[1]);
-    const cell = c => el('td', { title: c.title || null },
-        c.state === 'none' && !c.text ? el('span', { class: 'muted', text: '-' }) : el('span', { class: PLUGIN_MATRIX_BADGE[c.state] || 'badge', text: c.text || c.state }),
-        c.run && c.files.length ? el('div', { class: 'matrixfiles' }, c.files.map(f => el('a', { href: runFileLink(pid, c.run, f), target: '_blank', rel: 'noopener', title: 'open ' + f + ' in a new tab', text: f.split('/').pop() }))) : null);
+    const text = c => (c.text || c.state) + (c.at ? ' ' + pluginMatrixTime(c.at) : '');
+    const links = c => {
+        const a = (c.run ? c.files : []).map(f => el('a', { href: runFileLink(pid, c.run, f), target: '_blank', rel: 'noopener', title: 'open ' + f + ' in a new tab', text: f.split('/').pop() }));
+        // the figures of the two runs of the cell compared (the compare of the list of runs, in a new tab)
+        if (c.compare) a.push(el('a', { href: location.pathname + '#' + new URLSearchParams({ p: pid, stats: c.compare[0], other: c.compare[1] }).toString(),
+            target: '_blank', rel: 'noopener', title: 'compare the figures of the two runs in a new tab', text: 'stats' }));
+        return a.length ? el('div', { class: 'matrixfiles' }, a) : null;
+    };
+    const cell = c => el('td', { title: (c.title || '') + (c.at ? (c.title ? ' - ' : '') + fmtTime(c.at) : '') || null },
+        c.state === 'none' && !c.text ? el('span', { class: 'muted', text: '-' }) : el('span', { class: PLUGIN_MATRIX_BADGE[c.state] || 'badge', text: text(c) }),
+        links(c));
+    const sub = r => [r.sub, r.at ? pluginMatrixTime(r.at) : ''].filter(x => x).join(' - ');
     return el('div', { class: 'pblock' }, el('h3', { text: b.title }), b.text ? el('p', { class: 'muted', text: b.text }) : null,
         b.error ? el('div', { class: 'fielderror', text: b.error }) : null,
         b.rows.length === 0 ? (b.error ? null : el('p', { class: 'muted', text: 'nothing to show yet' })) :
         el('div', { class: 'tablewrap' }, el('table', { class: 'plain matrix' },
             el('thead', {}, el('tr', {}, el('th', { text: '' }), b.columns.map(c => el('th', { text: c.label, title: c.title || null })))),
-            el('tbody', {}, b.rows.map(r => el('tr', {}, el('td', { class: 'wrap' }, el('b', { text: r.label }), r.sub ? el('div', { class: 'muted', text: r.sub }) : null),
+            el('tbody', {}, b.rows.map(r => el('tr', {}, el('td', { class: 'wrap' }, el('b', { text: r.label }), sub(r) ? el('div', { class: 'muted', text: sub(r) }) : null),
                 r.cells.map(cell)))))));
 }

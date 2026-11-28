@@ -101,6 +101,25 @@ file_put_contents( $plugins . '/mx/plugin.php', <<<'MX'
             $out['cells']['injected'] = array( 'x' => array( 'state' => 'ok', 'run' => str_repeat( 'f', 32 ) ) );
             return $out;
         } ),
+        // the compares: diff runs (what they compared, PASS / FAIL), stats compare and not 100 % of runs, the ids of the images;
+        // times and a link to "Compare stats" in cells
+        array( 'name' => 'cmp', 'kind' => 'matrix', 'title' => 'Compares', 'cells' => function( ViewerPluginPage $page ) {
+            $out = array( 'columns' => array( array( 'key' => 'x' ) ), 'rows' => array(), 'cells' => array() );
+            foreach( $page->runs() as $r )
+            {
+                if( $r['type'] !== 'diff' || $r['state'] !== 'done' )
+                    continue;
+                $out['rows'][] = array( 'key' => $r['jid'], 'label' => 'diff', 'at' => $r['finished'], 'sub' => json_encode( array( $r['run1'], $r['run2'], $r['other'] !== null, $r['diff'] ) ) );
+                $sc = $r['run1'] !== null ? $page->statsCompare( $r['run1'], $r['run2'] ) : null;
+                $nf = $r['run1'] !== null ? $page->notFull( $r['run1'] ) : null;
+                $out['cells'][$r['jid']]['x'] = array( 'state' => 'ok', 'run' => $r['jid'], 'at' => $r['finished'], 'compare' => $r['run1'] !== null ? array( $r['run1'], $r['run2'] ) : null,
+                    'text' => json_encode( array( $sc === null ? null : array( is_bool( $sc['equal'] ), is_int( $sc['changed'] ) ), is_array( $nf ),
+                        $page->statsCompare( (string)$r['run1'], str_repeat( 'f', 32 ) ), $page->notFull( str_repeat( 'f', 32 ) ), $page->notFull( $r['jid'] ) ) ) );
+            }
+            $out['rows'][] = array( 'key' => 'ids', 'label' => json_encode( $page->imageIds() ), 'at' => 'yesterday' );
+            $out['cells']['ids']['x'] = array( 'state' => 'ok', 'compare' => array( str_repeat( 'f', 32 ), str_repeat( 'e', 32 ) ), 'at' => -5 );
+            return $out;
+        } ),
         array( 'name' => 'broken', 'kind' => 'matrix', 'title' => 'Broken', 'cells' => function( ViewerPluginPage $page ) { throw new Exception( 'plug-in failure' ); } ) ) ) ) );
 MX
 );
@@ -1946,6 +1965,16 @@ $r = $alice->call( 'PUT', $MX . '/blocks/settings', array( 'values' => array( 'p
 eq( array( status( $r ), $r[1]['values']['images'] ?? null ), array( 200, array( '@viewer', 'beta' ) ), 'plug-in page: settings saved (images once each)' );
 $rb = $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $visFid, 'then' => $after, 'bp' => $bpFid, 'image' => 'beta' ) );
 waitRun( $alice, $PB . '/runs/' . ( $rb[1]['jid'] ?? '' ) );
+// another release: the SCM variants of visibility.json ("scm", "platform") are resolved by the viewer for the version (a
+// PAN-OS configuration here) - an older release would pass them on as arguments
+$rbj = $alice->call( 'GET', $PB . '/runs/' . ( $rb[1]['jid'] ?? '' ) . '/files/playbook.json' )[1];
+$rbj = is_string( $rbj ) ? json_decode( $rbj, TRUE ) : $rbj;
+$visCmd = json_decode( file_get_contents( $here . '/../utils/api/v1/playbook/visibility.json' ), TRUE )['command'];
+$withKeys = count( array_filter( (array)( $rbj['command'] ?? array() ), function( $st ) { return array_key_exists( 'scm', $st ) || array_key_exists( 'platform', $st ); } ) );
+$scmOnly = count( array_filter( $visCmd, function( $st ) { return strtolower( $st['platform'] ?? '' ) === 'scm'; } ) );
+eq( array( $rb[1]['args'][0] ?? null, $withKeys, count( $rbj['command'] ?? array() ), $scmOnly > 0 ),
+    array( 'json=%JOB%/playbook.json', 0, $visSteps + 2 - $scmOnly, TRUE ),
+    'playbook run with another image: SCM variants resolved for the version - no "scm" / "platform" left, the SCM-only steps left out' );
 $pgm = $alice->call( 'GET', $MX );
 $blk = array_column( $pgm[1]['blocks'] ?? array(), null, 'name' );
 $opt = array_column( $blk['settings']['fields'] ?? array(), 'options', 'name' );
@@ -1959,6 +1988,21 @@ eq( array( array_column( $grid['columns'] ?? array(), 'key' ), isset( $rowOf['in
         $c0[0]['state'] ?? null, $c0[0]['run'] ?? null, $c0[0]['files'] ?? null, $c1[0]['run'] ?? null, $c0[1]['state'] ?? null, $c0[1]['run'] ?? null ),
     array( array( '@viewer', 'beta' ), FALSE, TRUE, 'ok', $tr[0], array( 'run.log', 'json/debugAPI_string.json' ), $tr[1], 'fail', $rb[1]['jid'] ?? 'x' ),
     'plug-in matrix: rows = uploaded versions, columns = images, a cell = the newest run of the settings (run of this project, plain file names; a row the plug-in did not list is not shown)' );
+// the compares: a diff of two run results - the runs it compared, its FinalResult; stats compare / not 100 % of those
+// runs (null for a run that is no stats run of the project); the ids of the images (no container runtime here: unknown)
+$cmp = array_column( $blk['cmp']['rows'] ?? array(), null, 'key' );
+$dr = $cmp[basename( $rd )] ?? array();
+$final = preg_match_all( '/^- FinalResult:\s+(PASS|FAIL)\s*$/m', $logR, $fm ) ? end( $fm[1] ) : 'none';
+eq( array( json_decode( $dr['sub'] ?? 'null', TRUE ), json_decode( $dr['cells'][0]['text'] ?? 'null', TRUE ), $dr['at'] === $dr['cells'][0]['at'] && is_int( $dr['at'] ),
+        $dr['cells'][0]['compare'] ?? null, $dr['cells'][0]['run'] ?? null ),
+    array( array( $tr[0], $tr[1], FALSE, $final ), array( array( TRUE, TRUE ), TRUE, null, null, null ), TRUE, array( $tr[0], $tr[1] ), basename( $rd ) ),
+    'plug-in page: a diff run of two run results - run1 / run2 and its FinalResult (' . $final . '); stats compare and not 100 % of those runs; a time and a link to the stats compare in the cell' );
+$meta = json_decode( (string)( new PDO( 'sqlite:' . $data . '/viewer.sqlite' ) )->query( "SELECT meta FROM jobs WHERE jid = '" . basename( $rd ) . "'" )->fetchColumn(), TRUE );
+eq( $meta['result'] ?? null, $final, 'diff run: the FinalResult is kept with the run once read' );
+$has = function( $a, $k ) { return is_array( $a ) && array_key_exists( $k, $a ) ? $a[$k] : 'missing'; };
+eq( array( json_decode( $cmp['ids']['label'] ?? 'null', TRUE ), $has( $cmp['ids'] ?? null, 'at' ), $has( $cmp['ids']['cells'][0] ?? null, 'compare' ), $has( $cmp['ids']['cells'][0] ?? null, 'at' ) ),
+    array( array( '@viewer' => null, 'beta' => null, 'main' => null ), null, null, null ),
+    'plug-in page: the ids of the images (unknown without a container runtime); a time that is no number and a compare of runs that are not of the project are dropped' );
 eq( array( $blk['broken']['error'] ?? null, $blk['broken']['rows'] ?? null, status( $alice->call( 'PUT', $MX . '/blocks/grid', array( 'values' => array() ) ) ) ),
     array( 'cells of the plug-in: plug-in failure', array(), 405 ), 'plug-in matrix: an error of the plug-in is shown in its block; a matrix can not be saved' );
 // a project type without roles: set like any other, no binding needed

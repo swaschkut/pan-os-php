@@ -812,8 +812,10 @@ class ViewerPluginPage
 
     /**
      * the runs of the project, newest first (at most 1000): jid, type, cid (the version it ran on), image (name; null:
-     * the image of the viewer), state, created, started, finished, error, has_stats, has_result, saved, and for a
-     * playbook run 'playbook' (file id, or "predefined:<name>"), 'then' (file id), 'bp' (file id) - null when not set
+     * the image of the viewer), image_id (the id of the image it ran with; null: not known), state, created, started,
+     * finished, error, has_stats, has_result, saved; for a playbook run 'playbook' (file id, or "predefined:<name>"),
+     * 'then' (file id), 'bp' (file id); for a diff run 'run1' / 'run2' (the two run results it compared) or 'other' (the
+     * other version), and 'diff' (PASS / FAIL: the FinalResult of type=diff) - null when not set
      */
     public function runs(): array
     {
@@ -839,5 +841,32 @@ class ViewerPluginPage
     public function images(): array
     {
         return (array)( $this->reader )( 'images' );
+    }
+
+    /**
+     * the id each image of images() has now (docker / podman: sha256:…), name => id; null: not known (no container
+     * runtime, not pulled yet). A run has the id it ran with (runs(): image_id) - another one now: the image changed.
+     */
+    public function imageIds(): array
+    {
+        return (array)( $this->reader )( 'image-ids' );
+    }
+
+    /**
+     * the figures of two finished runs of the project with a stats result compared ("Compare stats", StatsCompare::compare():
+     * equal, same, changed, only_a, only_b, blocks, …); null: one of them is no such run
+     */
+    public function statsCompare( string $a, string $b ): ?array
+    {
+        return ( $this->reader )( 'stats-compare', $a, $b );
+    }
+
+    /**
+     * the visibility not 100 % of a finished run with a stats result (StatsCompare::notFull with the exclusions of
+     * compare-stats-not-100), every statistics block: list of block, name, group, value; null: no such run
+     */
+    public function notFull( string $jid ): ?array
+    {
+        return ( $this->reader )( 'not-full', $jid );
     }
 }
